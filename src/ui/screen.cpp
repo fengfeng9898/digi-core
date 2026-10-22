@@ -272,7 +272,9 @@ void screen_sprite_flash(const SpriteDef* spr, int16_t cx, int16_t cy, uint8_t l
         }
     }
 
-    s_prev = spr;
+    // 闪白画的是「变白后的颜色」而不是调色板本色：
+    // 不能把它记成 s_prev，否则下一帧差分会认为颜色没变，把闪白永久留在屏上。
+    s_prev = nullptr;
     s_prev_cx = cx;
     s_prev_cy = cy;
     s_prev_dim = 255;

@@ -107,6 +107,15 @@ void ui_render(PetState& p, uint32_t now_ms) {
     if (!g_matrix) return;
     if (now_ms < s_hold_until) return;   // 启动横幅期间不覆盖画面
 
+    // ---- 每 30 秒强制整屏重绘一次：任何累积残留都会自愈 ----
+    static uint32_t s_last_full = 0;
+    if (now_ms - s_last_full > 30000u) {
+        s_last_full = now_ms;
+        screen_invalidate();
+        s_top_key = 0xFFFF;
+        s_bot_key = 0xFFFFFFFF;
+    }
+
     // ---- 背景（场景切换才整屏重建）+ 云（跨像素才重画）----
     const uint8_t scene = current_scene();
     screen_scene(scene);
