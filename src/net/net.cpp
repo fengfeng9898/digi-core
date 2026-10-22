@@ -185,6 +185,15 @@ static void handle_reset() {
     snprintf(body, sizeof(body), "{\"ok\":1,\"stage\":%u,\"species\":\"%s\"}",
              (unsigned)s_pet->stage, pet_species_name(s_pet->species));
     Serial.printf("[reset] new pet\n");
+    if (s_server.arg("h") == "1") {          // 浏览器直链访问 → 返回可读页面
+        String html = F("<!doctype html><meta charset=utf-8>"
+                        "<body style='background:#0d1117;color:#e6edf3;font-family:sans-serif;"
+                        "text-align:center;padding:60px 20px'>"
+                        "<h2>✅ 已重新开始</h2><p>回到一颗新蛋了</p>"
+                        "<p><a href='/' style='color:#58a6ff'>← 返回控制页</a></p></body>");
+        s_server.send(200, "text/html; charset=utf-8", html);
+        return;
+    }
     s_server.send(200, "application/json", body);
 }
 static void handle_ota_arm() {

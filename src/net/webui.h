@@ -123,7 +123,7 @@ button.p{background:#238636;border-color:#2ea043;color:#fff}
 
 <div class="card">
   <div class="row"><span class="muted">重置游戏（回到一颗新蛋）</span></div>
-  <div class="dbg"><button onclick="resetGame()" style="background:#7a1f1f">♻️ 重新开始</button></div>
+  <div class="dbg"><a href="/api/reset?k=1234&h=1" onclick="return confirm('确定重新开始？当前宠物会被清除。')" style="display:inline-block;padding:10px 16px;background:#7a1f1f;color:#fff;border-radius:10px;text-decoration:none">♻️ 重新开始</a></div>
   <div class="muted" style="margin-top:8px">会清空当前宠物，选好的进化线保留</div>
 </div>
 
