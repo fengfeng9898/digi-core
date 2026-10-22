@@ -36,12 +36,14 @@
       this.hpBefore = opts.hpBefore;
       this.hpAfter = opts.hpAfter;
       this.enemyHp = 100;
+      this.revert = !!opts.revert;
 
       this.phases = [
         { name: 'intro', dur: 450, shot: 'enemy' },
         { name: 'myAttack', dur: cap(me.anims.attack, 1400), shot: 'me' },
         { name: 'enemyHurt', dur: cap(en.anims.hurt, 1000), shot: 'enemy' }
       ];
+      if (this.revert) this.phases.unshift({ name: 'formUp', dur: 520, shot: 'me' });
       if (opts.win) {
         this.phases.push({ name: 'enemyDown', dur: 420, shot: 'enemy' });
         this.phases.push({ name: 'myWin', dur: cap(me.anims.win, 1500), shot: 'me' });
@@ -121,6 +123,8 @@
       let frame = null;
       let flash = 0;
       switch (phase.name) {
+        case 'formUp':      frame = this.frameAt(me.anims.idle, t, phase.dur);
+                            flash = t < 220 ? 0.6 : 0; break;
         case 'intro':       frame = this.frameAt(en.anims.idle, t, phase.dur); break;
         case 'myAttack':    frame = this.frameAt(me.anims.attack, t, phase.dur); break;
         case 'enemyHurt':   frame = this.frameAt(en.anims.hurt, t, phase.dur);
@@ -150,6 +154,7 @@
 
       // ---- 文字 ----
       const msg = {
+        formUp: 'CARD!',
         intro: this.enemyName(this.enemyChar) + '!',
         myAttack: 'GO!',
         enemyHurt: 'HIT!',
@@ -157,7 +162,7 @@
         myWin: 'YOU WIN!',
         enemyAttack: 'ENEMY!',
         myHurt: 'OUCH!',
-        end: this.win ? 'WINNER!' : 'DEFEAT..'
+        end: this.revert ? 'REVERT..' : (this.win ? 'WINNER!' : 'DEFEAT..')
       }[phase.name] || '';
       this.r.textCentered(msg, 57, '#fff');
     }

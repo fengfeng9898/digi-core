@@ -74,6 +74,7 @@
       </div>
       <div class="row" style="margin-top:10px"><span class="muted">下一阶段</span><span class="num" id="eta">—</span></div>
       <div class="row"><span class="muted">战绩</span><span class="num" id="wl">—</span></div>
+      <div class="row"><span class="muted">战斗卡</span><span class="num" id="bcard">—</span></div>
     </div>
 
     <div class="card">
@@ -93,6 +94,7 @@
       <div class="sec">卡片</div>
       <div class="btns">
         <button onclick="card('courage')">🦁 勇气卡</button>
+        <button onclick="card('battle')">⚔️ 战斗卡</button>
         <button onclick="card('power')">⚡ 力量卡</button>
         <button onclick="card('guard')">🛡 守护卡</button>
         <button onclick="card('heal')">❤️ 回复卡</button>
@@ -138,7 +140,7 @@
 const { Pet, EV } = DigiGame;
 const EV_CN = {1:'孵化',2:'进化',3:'喂食',4:'清洁',5:'训练',6:'战斗胜利',7:'战斗失败',8:'便便',
                9:'生病',10:'捡到东西',11:'呼唤',12:'睡觉',13:'醒来',14:'使用卡片',15:'死亡',
-               16:'被无视',17:'治疗',18:'安抚',19:'野生遭遇'};
+               16:'被无视',17:'治疗',18:'安抚',19:'野生遭遇',20:'退化'};
 
 let gameNow = Date.now() / 1000;
 let speed = 3600;
@@ -179,13 +181,17 @@ function act(cmd, silent) {
   const hpBefore = pet.hp;
   const r = pet.act(cmd, gameNow);
   if (cmd === 'battle' && r.win !== undefined && !silent) {
-    const myChar = R.charForSpecies(pet.species) || 'agumon';
+    // 战斗卡临时进化：有动画就用进化后的形态，没有素材（机械暴龙兽/战斗暴龙兽）就回退到当前形态
+    const baseChar = R.charForSpecies(pet.species) || 'agumon';
+    const formChar = r.battleForm ? R.charForSpecies(r.battleForm) : null;
+    const myChar = (formChar && window.DIGI_DATA.chars[formChar]) ? formChar : baseChar;
     battle.start({
       win: r.win,
       myChar,
       enemyChar: pickEnemy(myChar),
       hpBefore,
-      hpAfter: pet.hp
+      hpAfter: pet.hp,
+      revert: !!r.revert && !!formChar
     }, performance.now());
   }
   toast(r.msg);
@@ -226,6 +232,7 @@ function autoCare() {
   if (pet.poops > 0) act('clean', true);
   if (pet.pending === 2) act('pet', true);
   if (pet.stage === 4 && !(pet.items & 1)) card('courage');   // 模拟玩家用勇气卡
+  if (pet.hp < 45) card('heal');                              // 受伤就回血，避免退化
   if (pet.pending === 1 && pet.hp > 25) act('battle', true);
   else if (pet.hp > 40 && pet.stage >= 2 && !pet.sleeping && Math.random() < 0.5) act('battle', true);
 }
@@ -249,6 +256,7 @@ function renderPanel() {
     ? '还需 ' + (s.winsNeed - s.wins) + ' 胜'
     : (s.alive ? fmt(s.evolveIn) : '—');
   document.getElementById('wl').textContent = s.wins + ' 胜 / ' + s.losses + ' 负';
+  document.getElementById('bcard').textContent = s.battleCard ? '⚔️ 就绪（下一战临时进化）' : '—';
 
   document.getElementById('feed').innerHTML = (s.log || []).slice(0, 8).map(e => {
     const ago = Math.max(0, gameNow - e.t);

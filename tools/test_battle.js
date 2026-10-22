@@ -52,6 +52,7 @@ function run(name, opts) {
 
 const winShots = run('胜', { win: true, myChar: 'agumon', enemyChar: 'greymon', hpBefore: 90, hpAfter: 72 });
 const loseShots = run('负', { win: false, myChar: 'agumon', enemyChar: 'greymon', hpBefore: 90, hpAfter: 40 });
+const cardShots = run('战斗卡', { win: true, myChar: 'greymon', enemyChar: 'koromon', hpBefore: 90, hpAfter: 74, revert: true });
 
 // 检查敌方是否真的出现在右半边（在入场帧上统计）
 const rightPixels = (() => {
@@ -69,5 +70,5 @@ if (rightPixels < 40) throw new Error('敌方没有出现在右半屏: ' + right
 console.log(`敌方入场像素: ${rightPixels}`);
 
 fs.writeFileSync(path.join(__dirname, '..', 'docs', 'battle_frames.json'),
-  JSON.stringify({ win: winShots, lose: loseShots }));
+  JSON.stringify({ win: winShots, lose: loseShots, card: cardShots }));
 console.log('已导出 docs/battle_frames.json');

@@ -19,6 +19,7 @@ function runOnce() {
       if (pet.poops > 0) pet.act('clean', now);
       if (pet.pending === 2) pet.act('pet', now);
       if (pet.stage === ST.ADULT && !(pet.items & 1)) pet.card('courage', now);
+      if (pet.hp < 45) pet.card('heal', now);   // 受伤就用回复卡，避免被退化惩罚
       if (pet.hp > 35 && pet.stage >= ST.CHILD && battlesToday < 2 && pet.hunger > 0) {
         battlesToday++;
         pet.act('battle', now);

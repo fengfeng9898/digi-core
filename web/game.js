@@ -18,16 +18,16 @@
   const EV = {
     HATCH: 1, EVOLVE: 2, FEED: 3, CLEAN: 4, TRAIN: 5, WIN: 6, LOSE: 7,
     POOP: 8, SICK: 9, FOUND: 10, CALL: 11, SLEEP: 12, WAKE: 13, CARD: 14,
-    DEATH: 15, IGNORED: 16, HEAL: 17, PET: 18, WILD: 19
+    DEATH: 15, IGNORED: 16, HEAL: 17, PET: 18, WILD: 19, DEVOLVE: 20
   };
 
-  const ITEM = { COURAGE: 1, STRENGTH: 8, GUARD: 16, REVIVE: 32 };
+  const ITEM = { COURAGE: 1, STRENGTH: 8, GUARD: 16, REVIVE: 32, BATTLE: 64 };
 
   const CFG = {
     HUNGER_DROP_S: 2 * H,
     MOOD_DECAY_S: 10 * MN,
     HP_REGEN_S: 30 * MN,
-    HP_SICK_S: 10 * MN,
+    HP_SICK_S: 20 * MN,
     eventGap: [20 * MN, 180 * MN],
     stageDur: {
       0: [12 * H, 24 * H],
@@ -73,6 +73,7 @@
       this.log = [];
       this.lastEventSeq = 0;
       this.lastHeal = 0;
+      this.lastDevolve = 0;
       return this;
     }
 
@@ -229,7 +230,19 @@
 
       if (now - this.lastHeal >= 60) {
         this.lastHeal = now;
-        if (this.sick && this.poops === 0 && this.hunger > 0 && Math.random() < 0.02) this.sick = 0;
+        if (this.sick && this.poops === 0 && Math.random() < 0.02) this.sick = 0;
+      }
+
+      // 退化判定：饿到 0 / 重伤 / 生病，每小时最多判一次
+      if (now - this.lastDevolve >= 3600) {
+        this.lastDevolve = now;
+        if (this.stage >= ST.CHILD) {
+          let rate = 0;
+          if (this.hunger === 0) rate += 0.05;    // 饿肚子
+          if (this.hp < 15) rate += 0.010;        // 重伤（不是掉点血）
+          if (this.sick) rate += 0.005;           // 生病
+          if (rate > 0 && Math.random() < rate) this.devolve(now);
+        }
       }
 
       if (this.tryEvolve(now)) this.nextEvent = now + this.eventGap();
@@ -246,6 +259,23 @@
       if (!this.alive) return;
       this.stage = ST.DEAD; this.alive = 0; this.species = SP.EGG; this.pending = 0;
       this.logEvent(EV.DEATH, now);
+    }
+
+    // 随机退化：掉到当前阶段以下的任意阶段（最低幼年期，不回蛋）
+    devolve(now) {
+      if (this.stage <= ST.BABY) return false;
+      const lo = ST.BABY, hi = this.stage - 1;
+      const ns = lo + Math.floor(Math.random() * (hi - lo + 1));
+      this.stage = ns;
+      this.species = ns;                 // 阶段 1..5 与种族编号一一对应
+      this.stageStart = now;
+      this.evolveAt = now + this.stageDuration(ns);
+      this.wins = 0;                     // 退化后要重新攒胜场
+      this.atk = Math.max(3, Math.round(this.atk * 0.7));
+      this.def = Math.max(3, Math.round(this.def * 0.7));
+      this.mood = clampi(this.mood - 15, 0, 100);
+      this.logEvent(EV.DEVOLVE, now);
+      return true;
     }
 
     act(cmd, now) {
@@ -295,6 +325,18 @@
           const ambush = this.pending === 1;
           if (ambush) this.pending = 0;
 
+          // 战斗卡：临时进化一级参战，打完回到原阶段
+          let saved = null;
+          if ((this.items & ITEM.BATTLE) && this.stage < ST.PERFECT) {
+            this.items &= ~ITEM.BATTLE;
+            saved = { stage: this.stage, species: this.species, atk: this.atk, def: this.def };
+            this.stage += 1;
+            this.species = this.stage;
+            this.atk += 8;
+            this.def += 6;
+            this.logEvent(EV.CARD, now);
+          }
+
           const base = this.atk * 2 + this.def;
           const power = base + rr(-6, 7) + (ambush ? 4 : 0);
           const enemy = base + rr(-10, 12);
@@ -313,9 +355,24 @@
             this.mistakes++;
             this.logEvent(EV.LOSE, now);
           }
+
           const dead = this.hp === 0;
-          if (dead) this.die(now);
-          return { ok: true, msg: dead ? 'KO...' : (win ? (ambush ? 'AMBUSH WIN!' : 'YOU WIN!') : 'YOU LOSE..'), win, dead };
+          const battleForm = saved ? this.species : null;
+          if (dead) {
+            this.die(now);
+          } else if (saved) {
+            // 胜利（或失败）后回到原阶段
+            this.stage = saved.stage;
+            this.species = saved.species;
+            this.atk = saved.atk;
+            this.def = saved.def;
+          }
+
+          return {
+            ok: true,
+            msg: dead ? 'KO...' : (win ? (ambush ? 'AMBUSH WIN!' : 'YOU WIN!') : 'YOU LOSE..'),
+            win, dead, battleForm, revert: !!saved
+          };
         }
 
         case 'sleep':
@@ -345,6 +402,11 @@
       now = T(now);
       switch (id) {
         case 'courage': this.items |= ITEM.COURAGE; this.logEvent(EV.CARD, now); return { ok: true, msg: 'COURAGE!' };
+        case 'battle':
+          if (this.items & ITEM.BATTLE) return { ok: false, msg: 'READY' };
+          this.items |= ITEM.BATTLE;
+          this.logEvent(EV.CARD, now);
+          return { ok: true, msg: 'BATTLE CARD' };
         case 'power':
           if (this.items & ITEM.STRENGTH) return { ok: false, msg: 'USED' };
           this.items |= ITEM.STRENGTH; this.atk = clampi(this.atk + 5, 1, 99);
@@ -383,6 +445,7 @@
         pendingIn: Math.max(0, this.pendingUntil - T(now)),
         sleeping: this.sleeping, alive: this.alive, items: this.items,
         winsNeed: CFG.winsNeed[this.stage] || 0,
+        battleCard: !!(this.items & ITEM.BATTLE),
         log: this.log
       };
     }
