@@ -34,6 +34,8 @@ void app_on_event(uint8_t kind) {
     }
 }
 
+static_assert(PANEL_LATCH_BLANK >= 1, "latch_blanking 必须 >=1，0 会让库 uint8 下溢");
+
 void setup() {
     Serial.begin(115200);
     delay(150);
@@ -54,7 +56,7 @@ void setup() {
                       HUB75_I2S_CFG::SHIFTREG,
                       /*double_buff=*/true,
                       HUB75_I2S_CFG::HZ_15M,
-                      /*latch_blanking=*/0,
+                      /*latch_blanking=*/PANEL_LATCH_BLANK,
                       /*clkphase=*/true,
                       PANEL_MIN_REFRESH);
 

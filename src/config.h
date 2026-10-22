@@ -15,7 +15,8 @@
 
 // 64x64 是 1/32 扫描: 每帧并行输出 2 行 -> ROWS_PER_FRAME = 64/2 = 32
 #define PANEL_COLOR_DEPTH 6      // 5..7 都行; 6 在 16MHz 下约 180Hz 刷新
-#define PANEL_MIN_REFRESH 120
+#define PANEL_LATCH_BLANK 1       // 必须 >=1：库里 do{--b}while(b) 在 0 时会下溢越界
+#define PANEL_MIN_REFRESH 60      // 60 会选 bit2(112Hz)，颜色深度比 120 时更好
 #define PANEL_BRIGHTNESS  70     // 0..255, 首次点亮建议 <= 80
 
 // ------------------------------------------------------------------ 引脚 ----
