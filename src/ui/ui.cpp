@@ -2,6 +2,7 @@
 #include "../config.h"
 #include "../panel.h"
 #include "../gfx/sprite.h"
+#include "../game/clock.h"
 #include <string.h>
 
 // ---------------------------------------------------------------- 颜色 ----
@@ -103,6 +104,14 @@ void ui_render(PetState& p, uint32_t now_ms) {
 
     sprite_draw_bob(*g_matrix, sp, PANEL_W / 2, 34, now_ms, 1, dim);
 
+    // 待响应事件：左上角闪一个感叹号
+    if (p.pending != 0 && ((now_ms / 400) & 1)) {
+        g_matrix->setTextColor(C_AMBER);
+        g_matrix->setTextSize(1);
+        g_matrix->setCursor(0, 8);
+        g_matrix->print("!");
+    }
+
     // 便便指示（右下角 3 个小块）
     for (int i = 0; i < p.poops && i < 3; i++) {
         g_matrix->fillRect(56 + i * 3, 58, 2, 2, 0x8200);
@@ -117,9 +126,12 @@ void ui_render(PetState& p, uint32_t now_ms) {
         draw_text_centered("ZZZ...", PANEL_H - 7, C_CYAN);
     } else if (p.stage == ST_EGG) {
         char buf[12];
-        int left = (int)(EGG_HATCH_S * TIME_SCALE) - (int)p.stage_age_s;
-        if (left < 0) left = 0;
-        snprintf(buf, sizeof(buf), "EGG %d S", left);
+        uint32_t left = pet_evolve_in(p, clock_now());
+        if (left >= 3600) {
+            snprintf(buf, sizeof(buf), "EGG %luh", (unsigned long)(left / 3600));
+        } else {
+            snprintf(buf, sizeof(buf), "EGG %lum", (unsigned long)(left / 60));
+        }
         draw_text_centered(buf, PANEL_H - 7, C_CYAN);
     } else {
         draw_text_centered(pet_stage_name(p.stage), PANEL_H - 7, C_GRAY);

@@ -25,19 +25,34 @@ h1{font-size:17px;margin:0;letter-spacing:.14em;color:#7ee787}
 button{font:inherit;border:1px solid #30363d;background:#21262d;color:#e6edf3;border-radius:11px;padding:11px 6px;cursor:pointer;transition:.15s}
 button:active{transform:scale(.96);background:#30363d}
 button.p{background:#238636;border-color:#2ea043;color:#fff}
-button.d{background:#21262d;color:#f85149;border-color:#f8514944}
 .cards{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .cb{text-align:left;padding:10px 11px;line-height:1.35}
 .cb b{display:block;font-size:13px;margin-bottom:2px}
 .cb span{font-size:11px;color:#8b949e}
+#alert{border-color:#d29922;display:none}
+#alert .t{font-weight:700;color:#d29922;margin-bottom:4px}
+.feed{font-size:12px;color:#8b949e;line-height:1.9}
+.feed b{color:#e6edf3;font-weight:600}
+.feed .tm{color:#484f58;font-size:11px;margin-right:6px}
 #toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);background:#1f6feb;color:#fff;padding:9px 18px;border-radius:99px;font-size:13px;opacity:0;transition:.25s;pointer-events:none;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
 #toast.on{opacity:1;transform:translate(-50%,0)}
 .foot{text-align:center;color:#484f58;font-size:11px;margin-top:14px}
+.dbg{display:flex;gap:8px;margin-top:8px}
+.dbg button{flex:1;font-size:12px;padding:8px}
 </style></head><body>
 
 <div class="hd">
   <h1>DIGI-CORE</h1>
   <span class="muted"><i class="dot"></i><span id="ip">连接中</span></span>
+</div>
+
+<div class="card" id="alert">
+  <div class="t" id="alertT">—</div>
+  <div class="muted" id="alertD">—</div>
+  <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:10px">
+    <button class="p" id="alertBtn" onclick="alertAct()">立即响应</button>
+    <button onclick="hideAlert()">先不管</button>
+  </div>
 </div>
 
 <div class="card">
@@ -58,6 +73,9 @@ button.d{background:#21262d;color:#f85149;border-color:#f8514944}
     <div><div class="muted">体重</div><div class="num" id="wt">—</div></div>
     <div><div class="muted">年龄</div><div class="num" id="age">—</div></div>
   </div>
+  <div class="row" style="margin-top:10px">
+    <span class="muted">下一阶段</span><span class="num" id="eta">—</span>
+  </div>
 </div>
 
 <div class="card">
@@ -66,8 +84,10 @@ button.d{background:#21262d;color:#f85149;border-color:#f8514944}
     <button onclick="act('clean')">🧹 清洁</button>
     <button onclick="act('train')">💪 训练</button>
     <button onclick="act('battle')">⚔️ 战斗</button>
+    <button onclick="act('pet')">🤚 安抚</button>
     <button onclick="act('sleep')">🌙 睡觉</button>
     <button onclick="act('wake')">☀️ 唤醒</button>
+    <button onclick="act('evolve')">🧬 进化检查</button>
   </div>
 </div>
 
@@ -77,10 +97,14 @@ button.d{background:#21262d;color:#f85149;border-color:#f8514944}
     <button class="cb" onclick="card('courage')"><b>🦁 勇气卡</b><span>解锁究极体·战斗暴龙兽</span></button>
     <button class="cb" onclick="card('power')"><b>⚡ 力量卡</b><span>攻击 +5</span></button>
     <button class="cb" onclick="card('guard')"><b>🛡 守护卡</b><span>防御 +5</span></button>
-    <button class="cb" onclick="card('heal')"><b>❤️ 回复卡</b><span>体力与心情全满</span></button>
+    <button class="cb" onclick="card('heal')"><b>❤️ 回复卡</b><span>体力与心情全满，治病</span></button>
     <button class="cb" onclick="card('revive')"><b>✨ 复活卡</b><span>死亡后再生</span></button>
-    <button class="cb" onclick="act('evolve')"><b>🧬 进化检查</b><span>立即结算一次</span></button>
   </div>
+</div>
+
+<div class="card">
+  <div class="row"><span class="muted">最近事件</span><span class="muted" id="synced"></span></div>
+  <div class="feed" id="feed">—</div>
 </div>
 
 <div class="card">
@@ -88,19 +112,40 @@ button.d{background:#21262d;color:#f85149;border-color:#f8514944}
   <input type="range" id="bright" min="10" max="180" value="70" style="width:100%" oninput="setB(this.value)">
   <div class="row" style="margin-top:12px"><span class="muted">战绩</span><span class="num" id="wl">—</span></div>
   <div class="row"><span class="muted">已获得卡片</span><span class="num" id="items">—</span></div>
+  <div class="muted" style="margin-top:12px">调试：快进时间（验证 15~30 天节奏）</div>
+  <div class="dbg">
+    <button onclick="warp(6)">+6 小时</button>
+    <button onclick="warp(24)">+1 天</button>
+    <button onclick="warp(72)">+3 天</button>
+  </div>
 </div>
 
 <div class="foot">DIGI-CORE · 局域网控制台</div>
 <div id="toast"></div>
 
 <script>
-let t = null;
+let t=null, S=null, alertKind=0;
+const EV={1:'孵化',2:'进化',3:'喂食',4:'清洁',5:'训练',6:'战斗胜利',7:'战斗失败',8:'便便',9:'生病',
+          10:'捡到东西',11:'呼唤',12:'睡觉',13:'醒来',14:'使用卡片',15:'死亡',16:'被无视',17:'治疗',18:'安抚',19:'野生遭遇'};
+const ITEM_NAMES={1:'勇气',8:'力量',16:'守护',32:'复活'};
+
 function toast(m){const e=document.getElementById('toast');e.textContent=m;e.classList.add('on');clearTimeout(t);t=setTimeout(()=>e.classList.remove('on'),1600);}
 function pct(v){return Math.max(0,Math.min(100,v));}
-const ITEM_NAMES={1:'勇气',8:'力量',16:'守护',32:'复活'};
+function fmtLeft(s){
+  if(s<=0) return '可进化（等条件）';
+  const d=Math.floor(s/86400), h=Math.floor(s%86400/3600), m=Math.floor(s%3600/60);
+  if(d>0) return d+' 天 '+h+' 小时';
+  if(h>0) return h+' 小时 '+m+' 分';
+  return m+' 分钟';
+}
+function fmtAge(s){
+  const d=Math.floor(s/86400), h=Math.floor(s%86400/3600);
+  return d>0 ? (d+' 天 '+h+' 时') : (h+' 小时');
+}
 function apply(s){
+  S=s;
   document.getElementById('pname').textContent=s.speciesCn||s.species;
-  document.getElementById('pstage').textContent=(s.stageCn||s.stageName)+(s.alive?'':' · 已死亡');
+  document.getElementById('pstage').textContent=(s.stageCn||s.stageName)+(s.alive?'':' · 已死亡')+(s.sick?' · 生病':'');
   document.getElementById('pmode').textContent=s.sleeping?'睡眠':((s.stageName==='EGG')?'孵化中':'活动中');
   const mood=pct(s.mood), hp=pct(s.hp);
   document.getElementById('moodv').textContent=mood;
@@ -111,19 +156,50 @@ function apply(s){
   document.getElementById('hunger').textContent=s.hunger+'/4';
   document.getElementById('ad').textContent=s.atk+'/'+s.def;
   document.getElementById('wt').textContent=s.weight+'g';
-  document.getElementById('age').textContent=Math.floor(s.age/60)+'m';
+  document.getElementById('age').textContent=fmtAge(s.age);
+  document.getElementById('eta').textContent=s.winsNeed>0&&s.wins<s.winsNeed
+      ? ('还需 '+s.winsNeed+' 胜').replace(s.winsNeed,s.winsNeed-s.wins)
+      : fmtLeft(s.evolveIn);
   document.getElementById('wl').textContent=s.wins+' 胜 / '+s.losses+' 负';
   document.getElementById('bv').textContent=s.bright;
   document.getElementById('bright').value=s.bright;
   document.getElementById('ip').textContent=s.ip;
+  document.getElementById('synced').textContent=s.synced?'时间已同步':'时间未同步';
   const list=Object.keys(ITEM_NAMES).filter(k=>(s.items & k)).map(k=>ITEM_NAMES[k]);
   document.getElementById('items').textContent=list.length?list.join(' · '):'无';
+
+  // 事件流
+  const now=Math.floor(Date.now()/1000);
+  document.getElementById('feed').innerHTML=(s.ev||[]).slice(0,8).map(([ts,k])=>{
+    const ago=Math.max(0,now-ts);
+    const a=ago<60?'刚刚':(ago<3600?Math.floor(ago/60)+' 分钟前':(ago<86400?Math.floor(ago/3600)+' 小时前':Math.floor(ago/86400)+' 天前'));
+    return '<div><span class="tm">'+a+'</span><b>'+(EV[k]||('事件'+k))+'</b></div>';
+  }).join('')||'<div>还没有事件</div>';
+
+  // 待响应
+  if(s.pending){
+    alertKind=s.pending;
+    document.getElementById('alert').style.display='block';
+    document.getElementById('alertT').textContent=s.pending===1?'⚠️ 野生数码兽出现':'⚠️ 它在叫你';
+    document.getElementById('alertD').textContent=s.pending===1
+      ? ('还有 '+Math.max(0,Math.floor(s.pendingIn/60))+' 分钟，不理会会掉心情')
+      : ('还有 '+Math.max(0,Math.floor(s.pendingIn/60))+' 分钟，不理会记一次照顾失误');
+    document.getElementById('alertBtn').textContent=s.pending===1?'迎战':'安抚';
+  } else {
+    document.getElementById('alert').style.display='none';
+  }
+}
+function hideAlert(){document.getElementById('alert').style.display='none';}
+function alertAct(){
+  if(alertKind===1) act('battle'); else act('pet');
+  hideAlert();
 }
 async function refresh(){try{const r=await fetch('/api/state',{cache:'no-store'});apply(await r.json());}catch(e){}}
-async function act(c){try{const r=await fetch('/api/act?c='+c);const j=await r.json();toast(j.msg||'ok');apply(j.state||{});}catch(e){toast('连接失败');}refresh();}
-async function card(id){try{const r=await fetch('/api/card?id='+id);const j=await r.json();toast(j.msg||'ok');apply(j.state||{});}catch(e){toast('连接失败');}refresh();}
+async function act(c){try{const r=await fetch('/api/act?c='+c);const j=await r.json();toast(j.msg||'ok');if(j.state)apply(j.state);}catch(e){toast('连接失败');}refresh();}
+async function card(id){try{const r=await fetch('/api/card?id='+id);const j=await r.json();toast(j.msg||'ok');if(j.state)apply(j.state);}catch(e){toast('连接失败');}refresh();}
 async function setB(v){try{await fetch('/api/bright?v='+v);}catch(e){}}
-setInterval(refresh,1500);refresh();
+async function warp(h){try{const r=await fetch('/api/warp?h='+h);const j=await r.json();toast('快进 '+h+' 小时');if(j.state)apply(j.state);}catch(e){toast('连接失败');}refresh();}
+setInterval(refresh,2000);refresh();
 </script></body></html>)HTML";
 
 // 首次配网页（设备 AP 模式时提供）

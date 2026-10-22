@@ -43,18 +43,14 @@
 #define WIFI_AP_PASS    "digipet1"
 #define WIFI_STA_TIMEOUT_MS 20000
 
-// ------------------------------------------------------------ 玩法时间 ----
-// 单位: 秒。想快速看效果就把 TIME_SCALE 调大（2 = 2 倍速）。
-#define TIME_SCALE 2
-
-#define EGG_HATCH_S        20
-#define BABY_EVOLVE_S      120
-#define CHILD_EVOLVE_S     600
-#define TEEN_EVOLVE_S      1800
-
-#define HUNGER_DROP_S      60      // 每秒 tick 累加, 每 60s 掉 1 颗心
-#define MOOD_DECAY_S       25      // 饥饿为 0 时, 每 25s 掉 1 心情
-#define POOP_INTERVAL_S    240
+// ------------------------------------------------------------ 玩法节奏 ----
+// 目标：蛋 → 究极体 = 15 ~ 30 天真实时间。
+// 各阶段时长不写死，在 pet.cpp 的 stage_duration() 里按区间随机，
+// 所以每次养出来的节奏都不一样。
+#define HUNGER_DROP_S   7200      // 每 2 小时掉 1 颗心（4 心 = 8 小时，一天看 2~3 次够用）
+#define MOOD_DECAY_S    600       // 饥饿/脏污时每 10 分钟掉 1 心情
+#define HP_REGEN_S      1800      // 吃饱时每 30 分钟回 1 体力
+#define HP_SICK_S       600       // 生病时每 10 分钟掉 1 体力
 
 // ------------------------------------------------------------------ 存档 ----
 #define SAVE_NS       "digi"

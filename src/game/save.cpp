@@ -19,22 +19,22 @@ static void pet_seal(PetState& p) {
     p.crc = crc8(reinterpret_cast<const uint8_t*>(&p), offsetof(PetState, crc));
 }
 
-bool save_load(PetState& p) {
+bool save_load(PetState& p, uint32_t now) {
     Preferences prefs;
     if (!prefs.begin(SAVE_NS, true)) {
-        pet_new(p);
+        pet_new(p, now);
         return false;
     }
     size_t got = prefs.getBytes(SAVE_KEY, &p, sizeof(PetState));
     prefs.end();
 
     if (got != sizeof(PetState)) {
-        pet_new(p);
+        pet_new(p, now);
         return false;
     }
     const uint8_t want = crc8(reinterpret_cast<const uint8_t*>(&p), offsetof(PetState, crc));
     if (p.magic != 0x44494749u || p.version != 1 || p.crc != want) {
-        pet_new(p);
+        pet_new(p, now);
         return false;
     }
     return true;
