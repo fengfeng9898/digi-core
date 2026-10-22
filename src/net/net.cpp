@@ -222,6 +222,7 @@ void net_begin(PetState* pet) {
     s_server.on("/api/wifi/clear", HTTP_POST, handle_wifi_clear);
     s_server.onNotFound(handle_notfound);
     s_server.begin();
+    s_server.enableCORS(true);   // 让 APK 内的本地页面(file://)能调 /api/*
 
     show_ip_banner();
     Serial.printf("[net] mode=%s ip=%s\n", s_ap_mode ? "AP" : "LAN", ip_str().c_str());
