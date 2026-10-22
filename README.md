@@ -46,6 +46,11 @@ ESP32-DevKitC-32E + 独立 HUB75E 64×64 RGB 点阵屏，做成一台数码暴�
 
 ---
 
+## 先看效果：网页预览（不用板子）
+
+双击 `web/preview.html`，点按钮操作、拖速度看动画与进化。
+3600× 下约 6 分钟走完 15~30 天，带自动照料。详见 [web/README.md](web/README.md)。
+
 ## 编译 / 烧录
 
 ```powershell

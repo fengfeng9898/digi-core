@@ -397,9 +397,13 @@ void pet_tick(PetState& p, uint32_t now) {
         fire_event(p, now);
     }
 
-    // 生病恶化
-    if (p.sick && p.poops == 0 && p.hunger > 0 && random(0, 100) < 2) {
-        p.sick = 0;               // 条件变好有小概率自愈
+    // 生病自愈：每分钟最多判定一次（否则每秒 2% 会让生病形同虚设）
+    static uint32_t s_last_heal_check = 0;
+    if (now - s_last_heal_check >= 60) {
+        s_last_heal_check = now;
+        if (p.sick && p.poops == 0 && p.hunger > 0 && random(0, 100) < 2) {
+            p.sick = 0;
+        }
     }
 
     if (try_evolve(p, now)) {
