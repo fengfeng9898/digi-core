@@ -9,6 +9,11 @@ const { makeFB } = require('./framebuf.js');
 
 const raw = fs.readFileSync(path.join(__dirname, '..', 'web', 'data.js'), 'utf8');
 const DATA = JSON.parse(raw.slice(raw.indexOf('=') + 1).trim().replace(/;$/, ''));
+// 小丑王（敌方角色，独立数据文件）
+const rawJ = fs.readFileSync(path.join(__dirname, '..', 'web', 'joker_data.js'), 'utf8');
+const winJ = {};
+new Function('window', rawJ)(winJ);
+DATA.chars.joker = winJ.DIGI_JOKER;
 
 const fb = makeFB();
 require(path.join(__dirname, '..', 'web', 'bg.js'));
@@ -52,6 +57,7 @@ function run(name, opts) {
 
 const winShots = run('胜', { win: true, myChar: 'agumon', enemyChar: 'greymon', hpBefore: 90, hpAfter: 72 });
 const loseShots = run('负', { win: false, myChar: 'agumon', enemyChar: 'greymon', hpBefore: 90, hpAfter: 40 });
+const jokerShots = run('小丑王', { win: false, myChar: 'agumon', enemyChar: 'joker', hpBefore: 90, hpAfter: 45 });
 const cardShots = run('战斗卡', { win: true, myChar: 'greymon', enemyChar: 'koromon', hpBefore: 90, hpAfter: 74, revert: true });
 
 // 检查敌方是否真的出现在右半边（在入场帧上统计）
@@ -70,5 +76,5 @@ if (rightPixels < 40) throw new Error('敌方没有出现在右半屏: ' + right
 console.log(`敌方入场像素: ${rightPixels}`);
 
 fs.writeFileSync(path.join(__dirname, '..', 'docs', 'battle_frames.json'),
-  JSON.stringify({ win: winShots, lose: loseShots, card: cardShots }));
+  JSON.stringify({ win: winShots, lose: loseShots, card: cardShots, joker: jokerShots }));
 console.log('已导出 docs/battle_frames.json');

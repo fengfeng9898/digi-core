@@ -132,6 +132,7 @@
 
 <script src="data.js"></script>
 <script src="bg_data.js"></script>
+<script src="joker_data.js"></script>
 <script src="game.js"></script>
 <script src="render.js"></script>
 <script src="battle.js"></script>
@@ -150,13 +151,14 @@ let autoAt = 0;
 
 const pet = new Pet(gameNow);
 const R = new DigiRenderer(document.getElementById('screen'), window.DIGI_DATA);
+if (window.DIGI_JOKER) window.DIGI_DATA.chars.joker = window.DIGI_JOKER;   // 敌方角色
 const bg = new DigiBackground(window.DIGI_BG);
 R.bg = bg;
 R.sceneMode = 'auto';
 const battle = new DigiBattle(window.DIGI_DATA, R);
 
 function pickEnemy(myChar) {
-  const pool = ['koromon', 'agumon', 'greymon'].filter(k => k !== myChar);
+  const pool = ['koromon', 'agumon', 'greymon', 'joker'].filter(k => k !== myChar);
   return pool[Math.floor(Math.random() * pool.length)] || myChar;
 }
 

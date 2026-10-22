@@ -23,7 +23,7 @@ def frame_to_img(flat):
     return img
 
 
-LANES = [("win", "胜利"), ("lose", "失败"), ("card", "战斗卡（临时进化）")]
+LANES = [("win", "胜利"), ("lose", "失败"), ("card", "战斗卡（临时进化）"), ("joker", "小丑王（敌方）")]
 rows = [(label, d[key]) for key, label in LANES if key in d]
 cols = max(len(v) for _, v in rows)
 W = cols * (64 * S + GAP) + GAP

@@ -18,7 +18,7 @@
     }
 
     enemyName(key) {
-      return { koromon: 'KOROMON', agumon: 'AGUMON', greymon: 'GREYMON' }[key] || 'WILD';
+      return { koromon: 'KOROMON', agumon: 'AGUMON', greymon: 'GREYMON', joker: 'JOKER' }[key] || 'WILD';
     }
 
     start(opts, nowMs) {
@@ -141,7 +141,8 @@
       }
 
       if (frame) {
-        const tint = (shot === 'enemy') ? [0.72, 0.55, 0.62] : null;
+        // 野生兽用暗色区分；小丑王本身配色就够跳，保持原色
+        const tint = (shot === 'enemy' && this.enemyChar !== 'joker') ? [0.72, 0.55, 0.62] : null;
         if (this.r.drawFrame) this.r.drawFrame(frame, who.pal, FULL_Y, tint, flash);
         else this.plainFrame(ctx, frame, who.pal);
       }
