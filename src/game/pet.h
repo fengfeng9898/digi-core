@@ -7,18 +7,15 @@ enum PetStage : uint8_t {
 };
 
 enum PetSpecies : uint8_t {
-    SP_EGG = 0, SP_SPROUT, SP_LEAFLING, SP_BLOOMON, SP_GUARDIAN,
-    SP_OMEGA_FIRE, SP_OMEGA_WATER, SP_OMEGA_NATURE
+    SP_EGG = 0, SP_KOROMON, SP_AGUMON, SP_GREYMON, SP_METALGREYMON, SP_WARGREYMON
 };
 
 // 网页升级卡写入的标记位
 enum ItemFlags : uint32_t {
-    ITEM_CARD_FIRE   = 1u << 0,
-    ITEM_CARD_WATER  = 1u << 1,
-    ITEM_CARD_NATURE = 1u << 2,
-    ITEM_STRENGTH    = 1u << 3,
-    ITEM_GUARD       = 1u << 4,
-    ITEM_REVIVE      = 1u << 5,
+    ITEM_CARD_COURAGE = 1u << 0,   // 勇气卡：解锁究极体 战斗暴龙兽
+    ITEM_STRENGTH     = 1u << 3,
+    ITEM_GUARD        = 1u << 4,
+    ITEM_REVIVE       = 1u << 5,
 };
 
 // ------------------------------------------------------------------ 状态 ----

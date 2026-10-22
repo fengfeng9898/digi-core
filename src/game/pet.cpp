@@ -46,44 +46,38 @@ const char* pet_stage_name_cn(uint8_t stage) {
 
 const char* pet_species_name(uint8_t species) {
     switch (species) {
-        case SP_EGG:         return "EGG";
-        case SP_SPROUT:      return "SPROUT";
-        case SP_LEAFLING:    return "LEAFLING";
-        case SP_BLOOMON:     return "BLOOMON";
-        case SP_GUARDIAN:    return "GUARDIAN";
-        case SP_OMEGA_FIRE:  return "BLAZEDRAKE";
-        case SP_OMEGA_WATER: return "TIDELORD";
-        case SP_OMEGA_NATURE:return "VERDANT";
-        default:             return "UNKNOWN";
+        case SP_EGG:           return "EGG";
+        case SP_KOROMON:       return "KOROMON";
+        case SP_AGUMON:        return "AGUMON";
+        case SP_GREYMON:       return "GREYMON";
+        case SP_METALGREYMON:  return "METALGREY";
+        case SP_WARGREYMON:    return "WARGREYMON";
+        default:               return "UNKNOWN";
     }
 }
 
 const char* pet_species_name_cn(uint8_t species) {
     switch (species) {
-        case SP_EGG:         return "数码蛋";
-        case SP_SPROUT:      return "芽仔";
-        case SP_LEAFLING:    return "叶芽兽";
-        case SP_BLOOMON:     return "花冠兽";
-        case SP_GUARDIAN:    return "守护兽";
-        case SP_OMEGA_FIRE:  return "炽焰龙";
-        case SP_OMEGA_WATER: return "深潮兽";
-        case SP_OMEGA_NATURE:return "森罗兽";
-        default:             return "未知";
+        case SP_EGG:           return "数码蛋";
+        case SP_KOROMON:       return "滚球兽";
+        case SP_AGUMON:        return "亚古兽";
+        case SP_GREYMON:       return "暴龙兽";
+        case SP_METALGREYMON:  return "机械暴龙兽";
+        case SP_WARGREYMON:    return "战斗暴龙兽";
+        default:               return "未知";
     }
 }
 
 uint8_t pet_sprite_id(const PetState& p) {
     if (p.stage == ST_DEAD) return SPR_ID_DEAD;
     switch (p.species) {
-        case SP_EGG:         return SPR_ID_EGG;
-        case SP_SPROUT:      return SPR_ID_BABY;
-        case SP_LEAFLING:    return SPR_ID_CHILD;
-        case SP_BLOOMON:     return SPR_ID_TEEN;
-        case SP_GUARDIAN:    return SPR_ID_TEEN;      // v0.2 独立素材
-        case SP_OMEGA_FIRE:  return SPR_ID_ULT_FIRE;
-        case SP_OMEGA_WATER: return SPR_ID_ULT_WATER;
-        case SP_OMEGA_NATURE:return SPR_ID_ULT_NATURE;
-        default:             return SPR_ID_EGG;
+        case SP_EGG:           return SPR_ID_EGG;
+        case SP_KOROMON:       return SPR_ID_KOROMON;
+        case SP_AGUMON:        return SPR_ID_AGUMON;
+        case SP_GREYMON:       return SPR_ID_GREYMON;
+        case SP_METALGREYMON:  return SPR_ID_METALGREYMON;
+        case SP_WARGREYMON:    return SPR_ID_WARGREYMON;
+        default:               return SPR_ID_EGG;
     }
 }
 
@@ -105,17 +99,18 @@ void pet_new(PetState& p) {
 }
 
 // ------------------------------------------------------------------ 进化 ----
-// 表驱动：条件全部满足才进化，一步一个阶段。
+// 第一条角色链（亚古兽系），线性进化：
+//   蛋 → 滚球兽 → 亚古兽 → 暴龙兽 → 机械暴龙兽 → 战斗暴龙兽
 static bool try_evolve(PetState& p, char* msg, size_t n) {
     switch (p.stage) {
         case ST_EGG:
             if (p.stage_age_s >= EGG_HATCH_S * TIME_SCALE) {
                 p.stage = ST_BABY;
-                p.species = SP_SPROUT;
+                p.species = SP_KOROMON;
                 p.stage_age_s = 0;
                 p.hp = 100;
                 p.atk = 8; p.def = 6; p.weight = 14;
-                copy_msg(msg, n, "HATCHED!");
+                copy_msg(msg, n, "KOROMON!");
                 return true;
             }
             break;
@@ -123,12 +118,11 @@ static bool try_evolve(PetState& p, char* msg, size_t n) {
         case ST_BABY:
             if (p.stage_age_s >= BABY_EVOLVE_S * TIME_SCALE) {
                 p.stage = ST_CHILD;
-                p.species = SP_LEAFLING;
+                p.species = SP_AGUMON;
                 p.stage_age_s = 0;
                 p.atk += 4; p.def += 3; p.weight += 10;
-                // 失误多 -> 属性惩罚
                 if (p.mistakes > 4) { p.atk -= 2; p.mood -= 10; }
-                copy_msg(msg, n, "EVOLVED!");
+                copy_msg(msg, n, "AGUMON!");
                 return true;
             }
             break;
@@ -136,10 +130,10 @@ static bool try_evolve(PetState& p, char* msg, size_t n) {
         case ST_CHILD:
             if (p.stage_age_s >= CHILD_EVOLVE_S * TIME_SCALE && p.wins >= 1) {
                 p.stage = ST_TEEN;
-                p.species = SP_BLOOMON;
+                p.species = SP_GREYMON;
                 p.stage_age_s = 0;
                 p.atk += 6; p.def += 5; p.weight += 16;
-                copy_msg(msg, n, "EVOLVED!!");
+                copy_msg(msg, n, "GREYMON!");
                 return true;
             }
             break;
@@ -147,29 +141,22 @@ static bool try_evolve(PetState& p, char* msg, size_t n) {
         case ST_TEEN:
             if (p.stage_age_s >= TEEN_EVOLVE_S * TIME_SCALE && p.wins >= 3) {
                 p.stage = ST_ADULT;
-                p.species = SP_GUARDIAN;
+                p.species = SP_METALGREYMON;
                 p.stage_age_s = 0;
                 p.atk += 10; p.def += 8; p.weight += 30;
-                copy_msg(msg, n, "ADULT!");
+                copy_msg(msg, n, "METALGREY!");
                 return true;
             }
             break;
 
         case ST_ADULT:
-            // 完全体 → 究极体：需要 8 场胜利 + 一张进化卡
-            // 卡的属性决定进化成哪一只究极体（火 > 水 > 自然）
-            if (p.wins >= 8 && (p.items & (ITEM_CARD_FIRE | ITEM_CARD_WATER | ITEM_CARD_NATURE))) {
+            // 完全体 → 究极体：8 胜 + 勇气卡
+            if (p.wins >= 8 && (p.items & ITEM_CARD_COURAGE)) {
                 p.stage = ST_PERFECT;
-                if (p.items & ITEM_CARD_FIRE) {
-                    p.species = SP_OMEGA_FIRE;
-                } else if (p.items & ITEM_CARD_WATER) {
-                    p.species = SP_OMEGA_WATER;
-                } else {
-                    p.species = SP_OMEGA_NATURE;
-                }
+                p.species = SP_WARGREYMON;
                 p.stage_age_s = 0;
                 p.atk += 15; p.def += 12;
-                copy_msg(msg, n, "ULTIMATE!");
+                copy_msg(msg, n, "WARGREY!");
                 return true;
             }
             break;
@@ -352,19 +339,9 @@ bool pet_action(PetState& p, const char* cmd, char* msg, size_t n) {
 bool pet_apply_card(PetState& p, const char* id, char* msg, size_t n) {
     if (!id) return false;
 
-    if (!strcmp(id, "fire")) {
-        p.items |= ITEM_CARD_FIRE;
-        copy_msg(msg, n, "FIRE CARD");
-        return true;
-    }
-    if (!strcmp(id, "water")) {
-        p.items |= ITEM_CARD_WATER;
-        copy_msg(msg, n, "WATER CARD");
-        return true;
-    }
-    if (!strcmp(id, "nature")) {
-        p.items |= ITEM_CARD_NATURE;
-        copy_msg(msg, n, "NATURE!");
+    if (!strcmp(id, "courage")) {
+        p.items |= ITEM_CARD_COURAGE;
+        copy_msg(msg, n, "COURAGE!");
         return true;
     }
     if (!strcmp(id, "power")) {
@@ -391,7 +368,7 @@ bool pet_apply_card(PetState& p, const char* id, char* msg, size_t n) {
         if (p.alive) { copy_msg(msg, n, "NO NEED"); return false; }
         p.alive = 1;
         p.stage = ST_BABY;
-        p.species = SP_SPROUT;
+        p.species = SP_KOROMON;
         p.stage_age_s = 0;
         p.hp = 60;
         p.mood = 60;

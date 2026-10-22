@@ -78,9 +78,7 @@ COMMANDS = [
 ]
 
 CARDS = {
-    "火": "fire", "火焰": "fire",
-    "水": "water", "水系": "water",
-    "自然": "nature", "草": "nature",
+    "勇气": "courage", "勇敢": "courage",
     "力量": "power", "攻击": "power",
     "守护": "guard", "防御": "guard",
     "回复": "heal", "治疗": "heal",
