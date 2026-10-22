@@ -362,6 +362,13 @@ void pet_tick(PetState& p, uint32_t now) {
     if (!p.alive || p.stage == ST_DEAD) { p.last_settle = now; return; }
     if (p.last_settle == 0) { p.last_settle = now; return; }
 
+    // 时钟倒流（没联网时重启，uptime 归零）：整体平移时间戳，接着原来的节奏走，
+    // 否则 last_settle 在未来，宠物会永远冻结。
+    if (now + 60 < p.last_settle) {
+        pet_rebase(p, p.last_settle - now);
+        return;
+    }
+
     uint32_t dt = (now > p.last_settle) ? (now - p.last_settle) : 0;
     if (dt == 0) return;
 
