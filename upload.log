@@ -24,11 +24,33 @@ Dependency Graph
 |-- WebServer @ 2.0.0
 |-- WiFi @ 2.0.0
 Building in release mode
+Compiling .pio\build\esp32dev\src\ui\screen.cpp.o
+Compiling .pio\build\esp32dev\src\ui\ui.cpp.o
+In file included from .pio/libdeps/esp32dev/ESP32 HUB75 LED MATRIX PANEL DMA Display/src/ESP32-HUB75-MatrixPanel-I2S-DMA.h:12,
+                 from src/ui/../panel.h:2,
+                 from src/ui/ui.cpp:3:
+.pio/libdeps/esp32dev/ESP32 HUB75 LED MATRIX PANEL DMA Display/src/platforms/platform_detect.hpp:58:19: note: #pragma message: Compiling for original ESP32 (released 2016)
+   #pragma message "Compiling for original ESP32 (released 2016)"
+                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from .pio/libdeps/esp32dev/ESP32 HUB75 LED MATRIX PANEL DMA Display/src/ESP32-HUB75-MatrixPanel-I2S-DMA.h:12,
+                 from src/ui/../panel.h:2,
+                 from src/ui/screen.cpp:2:
+.pio/libdeps/esp32dev/ESP32 HUB75 LED MATRIX PANEL DMA Display/src/platforms/platform_detect.hpp:58:19: note: #pragma message: Compiling for original ESP32 (released 2016)
+   #pragma message "Compiling for original ESP32 (released 2016)"
+                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Linking .pio\build\esp32dev\firmware.elf
 Retrieving maximum program size .pio\build\esp32dev\firmware.elf
 Checking size .pio\build\esp32dev\firmware.elf
 Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
 RAM:   [==        ]  17.2% (used 56244 bytes from 327680 bytes)
-Flash: [====      ]  43.2% (used 1359685 bytes from 3145728 bytes)
+Flash: [====      ]  43.2% (used 1360341 bytes from 3145728 bytes)
+Building .pio\build\esp32dev\firmware.bin with action:
+  "$PYTHONEXE" "$OBJCOPY" --chip esp32 elf2image --flash_mode ${__get_board_flash_mode(__env__)} --flash_freq ${__get_board_f_image(__env__)} --flash_size 4MB --elf-sha256-offset 0xb0 -o $TARGET $SOURCES
+Building .pio\build\esp32dev\firmware.bin
+esptool.py v4.5.1
+Creating esp32 image...
+Merged 27 ELF sections
+Successfully created esp32 image.
 Configuring upload protocol...
 AVAILABLE: cmsis-dap, esp-bridge, esp-prog, espota, esptool, iot-bus-jtag, jlink, minimodule, olimex-arm-usb-ocd, olimex-arm-usb-ocd-h, olimex-arm-usb-tiny-h, olimex-jtag-tiny, tumpa
 CURRENT: upload_protocol = esptool
@@ -54,61 +76,61 @@ Flash will be erased from 0x0000e000 to 0x0000ffff...
 Flash will be erased from 0x00010000 to 0x0015dfff...
 Compressed 17536 bytes to 12202...
 Writing at 0x00001000... (100 %)
-Wrote 17536 bytes (12202 compressed) at 0x00001000 in 0.3 seconds (effective 552.8 kbit/s)...
+Wrote 17536 bytes (12202 compressed) at 0x00001000 in 0.3 seconds (effective 552.3 kbit/s)...
 Hash of data verified.
 Compressed 3072 bytes to 137...
 Writing at 0x00008000... (100 %)
-Wrote 3072 bytes (137 compressed) at 0x00008000 in 0.0 seconds (effective 1355.7 kbit/s)...
+Wrote 3072 bytes (137 compressed) at 0x00008000 in 0.0 seconds (effective 1347.2 kbit/s)...
 Hash of data verified.
 Compressed 8192 bytes to 47...
 Writing at 0x0000e000... (100 %)
-Wrote 8192 bytes (47 compressed) at 0x0000e000 in 0.0 seconds (effective 2162.7 kbit/s)...
+Wrote 8192 bytes (47 compressed) at 0x0000e000 in 0.0 seconds (effective 1917.4 kbit/s)...
 Hash of data verified.
-Compressed 1366256 bytes to 668733...
+Compressed 1366912 bytes to 669412...
 Writing at 0x00010000... (2 %)
-Writing at 0x00024cbd... (4 %)
-Writing at 0x000389a3... (7 %)
-Writing at 0x0004f27e... (9 %)
-Writing at 0x000636fb... (12 %)
-Writing at 0x000794b5... (14 %)
-Writing at 0x000837b5... (17 %)
-Writing at 0x0008fb6e... (19 %)
-Writing at 0x0009b66a... (21 %)
-Writing at 0x000a682b... (24 %)
-Writing at 0x000b13f1... (26 %)
-Writing at 0x000b6e79... (29 %)
-Writing at 0x000bc442... (31 %)
-Writing at 0x000c21a1... (34 %)
-Writing at 0x000c7929... (36 %)
-Writing at 0x000ccfb2... (39 %)
-Writing at 0x000d229b... (41 %)
-Writing at 0x000d75c2... (43 %)
-Writing at 0x000dc805... (46 %)
-Writing at 0x000e1b5a... (48 %)
-Writing at 0x000e6d5c... (51 %)
-Writing at 0x000ebeed... (53 %)
-Writing at 0x000f102e... (56 %)
-Writing at 0x000f65de... (58 %)
-Writing at 0x000fb842... (60 %)
-Writing at 0x00101503... (63 %)
-Writing at 0x00106ced... (65 %)
-Writing at 0x0010bdff... (68 %)
-Writing at 0x00111243... (70 %)
-Writing at 0x00116691... (73 %)
-Writing at 0x0011bcb7... (75 %)
-Writing at 0x0012152e... (78 %)
-Writing at 0x0012716a... (80 %)
-Writing at 0x0012cb58... (82 %)
-Writing at 0x00132393... (85 %)
-Writing at 0x0013ac15... (87 %)
-Writing at 0x00143561... (90 %)
-Writing at 0x001486f8... (92 %)
-Writing at 0x0014e0f7... (95 %)
-Writing at 0x001539dd... (97 %)
-Writing at 0x00158d69... (100 %)
-Wrote 1366256 bytes (668733 compressed) at 0x00010000 in 9.7 seconds (effective 1128.9 kbit/s)...
+Writing at 0x00024d05... (4 %)
+Writing at 0x00038999... (7 %)
+Writing at 0x0004f274... (9 %)
+Writing at 0x000636f4... (12 %)
+Writing at 0x000794b0... (14 %)
+Writing at 0x000837a2... (17 %)
+Writing at 0x0008fb6a... (19 %)
+Writing at 0x0009b5af... (21 %)
+Writing at 0x000a67cc... (24 %)
+Writing at 0x000b13b5... (26 %)
+Writing at 0x000b6de8... (29 %)
+Writing at 0x000bc2fc... (31 %)
+Writing at 0x000c20be... (34 %)
+Writing at 0x000c784b... (36 %)
+Writing at 0x000ccedf... (39 %)
+Writing at 0x000d21e0... (41 %)
+Writing at 0x000d752b... (43 %)
+Writing at 0x000dc75c... (46 %)
+Writing at 0x000e1a9d... (48 %)
+Writing at 0x000e6c74... (51 %)
+Writing at 0x000ebe4c... (53 %)
+Writing at 0x000f0fbd... (56 %)
+Writing at 0x000f650b... (58 %)
+Writing at 0x000fb75a... (60 %)
+Writing at 0x001013c8... (63 %)
+Writing at 0x00106c41... (65 %)
+Writing at 0x0010bd63... (68 %)
+Writing at 0x0011118d... (70 %)
+Writing at 0x00116593... (73 %)
+Writing at 0x0011bbac... (75 %)
+Writing at 0x0012145c... (78 %)
+Writing at 0x001270b5... (80 %)
+Writing at 0x0012c9dc... (82 %)
+Writing at 0x001322b2... (85 %)
+Writing at 0x0013a805... (87 %)
+Writing at 0x001433aa... (90 %)
+Writing at 0x00148628... (92 %)
+Writing at 0x0014dff0... (95 %)
+Writing at 0x0015392b... (97 %)
+Writing at 0x00158c18... (100 %)
+Wrote 1366912 bytes (669412 compressed) at 0x00010000 in 9.7 seconds (effective 1125.1 kbit/s)...
 Hash of data verified.
 
 Leaving...
 Hard resetting via RTS pin...
-========================= [SUCCESS] Took 17.58 seconds =========================
+========================= [SUCCESS] Took 21.05 seconds =========================

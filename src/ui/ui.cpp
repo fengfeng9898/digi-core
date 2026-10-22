@@ -23,7 +23,10 @@
 static uint8_t  s_brightness = PANEL_BRIGHTNESS;
 static char     s_toast[24] = {0};
 static uint32_t s_toast_until = 0;
-static bool     s_scene_ready = false;
+
+// HUD 缓存：值没变就一个像素都不写
+static uint16_t s_top_key = 0xFFFF;
+static uint32_t s_bot_key = 0xFFFFFFFF;
 
 // 5x5 爱心
 static const uint8_t HEART[5] = {0b01010, 0b11111, 0b11111, 0b01110, 0b00100};
@@ -78,6 +81,7 @@ void ui_toast(const char* msg) {
     strncpy(s_toast, msg, sizeof(s_toast) - 1);
     s_toast[sizeof(s_toast) - 1] = 0;
     s_toast_until = millis() + 2000;
+    s_bot_key = 0xFFFFFFFF;      // 强制刷新底栏
 }
 
 static uint32_t s_hold_until = 0;
@@ -89,30 +93,34 @@ void ui_boot(const char* l1, const char* l2) {
     screen_text_center(l1, 20, C_GREEN);
     if (l2) screen_text_center(l2, 36, C_GRAY);
     s_hold_until = millis() + 2600;   // 启动/配网横幅停留 2.6 秒
-    s_scene_ready = false;
+    s_top_key = 0xFFFF;
+    s_bot_key = 0xFFFFFFFF;
 }
 
 void ui_render(PetState& p, uint32_t now_ms) {
     if (!g_matrix) return;
     if (now_ms < s_hold_until) return;   // 启动横幅期间不覆盖画面
 
-    // ---- 背景（场景切换时才整屏重建）----
+    // ---- 背景（场景切换才整屏重建）+ 云（跨像素才重画）----
     const uint8_t scene = current_scene();
     screen_scene(scene);
-    if (!s_scene_ready) { s_scene_ready = true; }
     screen_clouds(now_ms, scene);
 
-    // ---- 状态栏（画在顶部黑条，每帧刷新）----
-    screen_clear_band(0, 8);
-    for (int i = 0; i < 4; i++) draw_heart(1 + i * 6, 1, i < p.hunger);
+    // ---- 顶部状态栏：只有饥饿/心情变化才重画 ----
+    uint16_t topk = (uint16_t)p.hunger | ((uint16_t)(p.mood > 100 ? 100 : p.mood) << 4);
+    if (topk != s_top_key) {
+        s_top_key = topk;
+        screen_clear_band(0, 8);
+        for (int i = 0; i < 4; i++) draw_heart(1 + i * 6, 1, i < p.hunger);
 
-    const int16_t mb_x = 28, mb_y = 1, mb_w = 35, mb_h = 5;
-    g_matrix->drawRect(mb_x, mb_y, mb_w, mb_h, C_DIM);
-    int fill = (int)((mb_w - 2) * (p.mood > 100 ? 100 : p.mood) / 100);
-    uint16_t mc = (p.mood > 60) ? C_GREEN : (p.mood > 30 ? C_AMBER : C_RED);
-    if (fill > 0) g_matrix->fillRect(mb_x + 1, mb_y + 1, fill, mb_h - 2, mc);
+        const int16_t mb_x = 28, mb_y = 1, mb_w = 35, mb_h = 5;
+        g_matrix->drawRect(mb_x, mb_y, mb_w, mb_h, C_DIM);
+        int fill = (int)((mb_w - 2) * (p.mood > 100 ? 100 : p.mood) / 100);
+        uint16_t mc = (p.mood > 60) ? C_GREEN : (p.mood > 30 ? C_AMBER : C_RED);
+        if (fill > 0) g_matrix->fillRect(mb_x + 1, mb_y + 1, fill, mb_h - 2, mc);
+    }
 
-    // ---- 主体（脏矩形：只恢复上一帧画过的像素）----
+    // ---- 主体：像素级差分，不变化的帧一个像素都不写 ----
     uint8_t dim = 255;
     if (p.sleeping) dim = 96;
     if (!p.alive) dim = 150;
@@ -131,30 +139,34 @@ void ui_render(PetState& p, uint32_t now_ms) {
         screen_sprite(&sp, PANEL_W / 2, 34 + bob, dim);
     }
 
-    // ---- 底部：左时钟 / 右阶段（或 toast）----
-    screen_clear_band(56, 8);
-    if (now_ms < s_toast_until && s_toast[0]) {
-        screen_text_center(s_toast, 56, C_WHITE);
-    } else {
-        draw_clock();
-        if (!p.alive) {
-            screen_text_at("RIP", 52, 56, C_GRAY);
-        } else if (p.sleeping) {
-            screen_text_at("ZZZ", 52, 56, C_CYAN);
+    // ---- 底部：时钟 / 阶段 / toast，变化时才重画 ----
+    const bool toast_on = (now_ms < s_toast_until && s_toast[0] != 0);
+    uint32_t bj = (clock_now() + 8UL * 3600UL) % 86400UL;
+    uint32_t botk = (bj / 60)
+                  | ((uint32_t)p.stage << 20)
+                  | ((uint32_t)p.sleeping << 24)
+                  | ((uint32_t)p.alive << 25)
+                  | ((uint32_t)p.poops << 26)
+                  | ((uint32_t)(toast_on ? 1 : 0) << 28);
+    if (botk != s_bot_key) {
+        s_bot_key = botk;
+        screen_clear_band(56, 8);
+        if (toast_on) {
+            screen_text_center(s_toast, 56, C_WHITE);
         } else {
-            const char* st = short_stage(p.stage);
-            int n = (int)strlen(st);
-            screen_text_at(st, 63 - n * 6, 56, C_WHITE);
+            draw_clock();
+            if (!p.alive) {
+                screen_text_at("RIP", 52, 56, C_GRAY);
+            } else if (p.sleeping) {
+                screen_text_at("ZZZ", 52, 56, C_CYAN);
+            } else {
+                const char* st = short_stage(p.stage);
+                int n = (int)strlen(st);
+                screen_text_at(st, 63 - n * 6, 56, C_WHITE);
+            }
         }
-    }
-
-    // ---- 待响应事件：左上闪感叹号 ----
-    if (p.pending != 0 && ((now_ms / 400) & 1)) {
-        screen_text_at("!", 0, 8, C_AMBER);
-    }
-
-    // ---- 便便指示 ----
-    for (int i = 0; i < p.poops && i < 3; i++) {
-        screen_rect(56 + i * 3, 58, 2, 2, 0x8200);
+        for (int i = 0; i < p.poops && i < 3; i++) {
+            screen_rect(56 + i * 3, 58, 2, 2, 0x8200);
+        }
     }
 }

@@ -6,9 +6,10 @@
 static uint16_t s_base[64 * 64];          // 背景 + 云（8KB）
 static uint8_t  s_scene = 0xFF;
 
-// 上一帧画过的角色，用于精确恢复
+// 上一帧角色（用于像素级差分：只写真正变化的像素）
 static const SpriteDef* s_prev = nullptr;
 static int16_t  s_prev_cx = 0, s_prev_cy = 0;
+static uint8_t  s_prev_dim = 255;
 
 // 云状态
 static const char* const CL_A[3] = {"...1111...", "..111111..", ".11111111."};
@@ -28,12 +29,27 @@ static inline uint8_t bg_idx(char c) {
     return 0;
 }
 
+static inline uint8_t hex_idx(char ch) {
+    if (ch >= '0' && ch <= '9') return (uint8_t)(ch - '0');
+    if (ch >= 'A' && ch <= 'F') return (uint8_t)(ch - 'A' + 10);
+    if (ch >= 'a' && ch <= 'f') return (uint8_t)(ch - 'a' + 10);
+    return 0;
+}
+
+static inline uint16_t dim_color(uint16_t c, uint8_t dim) {
+    if (dim >= 255) return c;
+    uint16_t r = (c >> 11) & 0x1F, g = (c >> 5) & 0x3F, b = c & 0x1F;
+    r = (uint16_t)((r * dim) >> 8);
+    g = (uint16_t)((g * dim) >> 8);
+    b = (uint16_t)((b * dim) >> 8);
+    return (uint16_t)((r << 11) | (g << 5) | b);
+}
+
 static inline void put_base(int16_t x, int16_t y, uint16_t c) {
     if (x < 0 || y < 0 || x >= 64 || y >= 64) return;
     s_base[y * 64 + x] = c;
 }
 
-// 从底图刷一个矩形到面板
 static void blit_rect(int16_t x0, int16_t y0, int16_t w, int16_t h) {
     for (int16_t y = y0; y < y0 + h; y++) {
         if (y < 0 || y >= 64) continue;
@@ -62,6 +78,7 @@ void screen_init() {
     memset(s_base, 0, sizeof(s_base));
     s_scene = 0xFF;
     s_prev = nullptr;
+    s_prev_dim = 255;
     for (int i = 0; i < 3; i++) s_cl[i].last_ix = -999;
     s_cloud_last = 0;
 }
@@ -77,14 +94,12 @@ void screen_scene(uint8_t idx) {
     if (idx == s_scene) return;
     s_scene = idx;
     build_scene(idx);
-    // 云位置重置到场景初始，避免跨场景错位
     s_cl[0].x = 6;  s_cl[1].x = 34; s_cl[2].x = 52;
     for (int i = 0; i < 3; i++) s_cl[i].last_ix = -999;
     s_prev = nullptr;
     blit_rect(0, 0, 64, 64);
 }
 
-// 把某朵云按当前整数位置画进底图
 static void stamp_cloud(Cloud& c, uint16_t main_c, uint16_t shade_c) {
     int16_t ox = (int16_t)c.x;
     for (int yy = 0; yy < 3; yy++) {
@@ -96,7 +111,6 @@ static void stamp_cloud(Cloud& c, uint16_t main_c, uint16_t shade_c) {
     }
 }
 
-// 用背景重填某朵云占据的条带
 static void erase_cloud(Cloud& c) {
     const SceneDef& s = BG_SCENES[s_scene];
     int16_t ox = (int16_t)c.x;
@@ -129,77 +143,108 @@ void screen_clouds(uint32_t now_ms, uint8_t scene) {
         if (c.x > 64 + c.w) c.x = -(float)c.w;
 
         int16_t ix = (int16_t)c.x;
-        if (ix == c.last_ix) continue;          // 没跨像素就不重画
+        if (ix == c.last_ix) continue;
         c.last_ix = ix;
 
         erase_cloud(c);
         stamp_cloud(c, c_main, c_shade);
         blit_rect(ix - 2, 8 + c.y, c.w + 4, 3);
-    }
-}
-
-// 把上一帧角色覆盖的像素从底图恢复
-static void restore_prev() {
-    if (!s_prev) return;
-    const int16_t ox = s_prev_cx - (int16_t)s_prev->w / 2;
-    const int16_t oy = s_prev_cy - (int16_t)s_prev->h / 2;
-    for (uint8_t row = 0; row < s_prev->h; row++) {
-        const char* line = s_prev->rows[row];
-        int16_t y = oy + row;
-        if (y < 0 || y >= 64) continue;
-        for (uint8_t col = 0; col < s_prev->w; col++) {
-            if (line[col] == '0') continue;
-            int16_t x = ox + col;
-            if (x < 0 || x >= 64) continue;
-            g_matrix->drawPixel(x, y, s_base[y * 64 + x]);
+        // 云盖到角色区域时，让下一帧重画角色
+        if (s_prev) {
+            int16_t px0 = s_prev_cx - (int16_t)s_prev->w / 2;
+            int16_t px1 = px0 + s_prev->w;
+            if (ix + c.w >= px0 && ix - 2 <= px1) s_prev = nullptr;
         }
     }
 }
 
-static inline uint16_t dim_color(uint16_t c, uint8_t dim) {
-    if (dim >= 255) return c;
-    uint16_t r = (c >> 11) & 0x1F, g = (c >> 5) & 0x3F, b = c & 0x1F;
-    r = (uint16_t)((r * dim) >> 8);
-    g = (uint16_t)((g * dim) >> 8);
-    b = (uint16_t)((b * dim) >> 8);
-    return (uint16_t)((r << 11) | (g << 5) | b);
-}
-
+// 角色像素级差分：只有颜色真正变化的像素才写面板
 void screen_sprite(const SpriteDef* spr, int16_t cx, int16_t cy, uint8_t dim) {
     if (!spr) return;
-    restore_prev();
+
+    // 同一帧、同位置、同亮度 → 一个像素都不写
+    if (spr == s_prev && cx == s_prev_cx && cy == s_prev_cy && dim == s_prev_dim) return;
 
     const int16_t ox = cx - (int16_t)spr->w / 2;
     const int16_t oy = cy - (int16_t)spr->h / 2;
-    uint16_t pal[16];
-    for (int i = 0; i < 16; i++) pal[i] = dim_color(spr->pal[i], dim);
 
-    for (uint8_t row = 0; row < spr->h; row++) {
-        const char* line = spr->rows[row];
-        int16_t y = oy + row;
-        if (y < 0 || y >= 64) continue;
-        for (uint8_t col = 0; col < spr->w; col++) {
-            uint8_t idx;
-            char ch = line[col];
-            if (ch >= '0' && ch <= '9') idx = (uint8_t)(ch - '0');
-            else if (ch >= 'A' && ch <= 'F') idx = (uint8_t)(ch - 'A' + 10);
-            else if (ch >= 'a' && ch <= 'f') idx = (uint8_t)(ch - 'a' + 10);
-            else idx = 0;
-            if (idx == 0) continue;
-            int16_t x = ox + col;
-            if (x < 0 || x >= 64) continue;
-            g_matrix->drawPixel(x, y, pal[idx]);
+    bool same_box = s_prev && s_prev_cx == cx && s_prev_cy == cy &&
+                    s_prev->w == spr->w && s_prev->h == spr->h;
+
+    if (!same_box) {
+        if (s_prev) {
+            const int16_t pox = s_prev_cx - (int16_t)s_prev->w / 2;
+            const int16_t poy = s_prev_cy - (int16_t)s_prev->h / 2;
+            for (uint8_t row = 0; row < s_prev->h; row++) {
+                const char* line = s_prev->rows[row];
+                int16_t y = poy + row;
+                if (y < 0 || y >= 64) continue;
+                for (uint8_t col = 0; col < s_prev->w; col++) {
+                    if (hex_idx(line[col]) == 0) continue;
+                    int16_t x = pox + col;
+                    if (x < 0 || x >= 64) continue;
+                    g_matrix->drawPixel(x, y, s_base[y * 64 + x]);
+                }
+            }
+        }
+        for (uint8_t row = 0; row < spr->h; row++) {
+            const char* line = spr->rows[row];
+            int16_t y = oy + row;
+            if (y < 0 || y >= 64) continue;
+            for (uint8_t col = 0; col < spr->w; col++) {
+                uint8_t idx = hex_idx(line[col]);
+                if (idx == 0) continue;
+                int16_t x = ox + col;
+                if (x < 0 || x >= 64) continue;
+                g_matrix->drawPixel(x, y, dim_color(spr->pal[idx], dim));
+            }
+        }
+    } else {
+        // 同一画布内换帧：只写颜色不同的像素
+        for (uint8_t row = 0; row < spr->h; row++) {
+            const char* nl = spr->rows[row];
+            const char* ol = s_prev->rows[row];
+            int16_t y = oy + row;
+            if (y < 0 || y >= 64) continue;
+            for (uint8_t col = 0; col < spr->w; col++) {
+                int16_t x = ox + col;
+                if (x < 0 || x >= 64) continue;
+
+                uint8_t ni = hex_idx(nl[col]);
+                uint8_t oi = hex_idx(ol[col]);
+                uint16_t bg = s_base[y * 64 + x];
+                uint16_t nc = ni ? dim_color(spr->pal[ni], dim) : bg;
+                uint16_t oc = oi ? dim_color(s_prev->pal[oi], s_prev_dim) : bg;
+                if (nc == oc) continue;
+                g_matrix->drawPixel(x, y, nc);
+            }
         }
     }
 
     s_prev = spr;
     s_prev_cx = cx;
     s_prev_cy = cy;
+    s_prev_dim = dim;
 }
 
 void screen_sprite_flash(const SpriteDef* spr, int16_t cx, int16_t cy, uint8_t level) {
     if (!spr) return;
-    restore_prev();
+
+    if (s_prev) {
+        const int16_t pox = s_prev_cx - (int16_t)s_prev->w / 2;
+        const int16_t poy = s_prev_cy - (int16_t)s_prev->h / 2;
+        for (uint8_t row = 0; row < s_prev->h; row++) {
+            const char* line = s_prev->rows[row];
+            int16_t y = poy + row;
+            if (y < 0 || y >= 64) continue;
+            for (uint8_t col = 0; col < s_prev->w; col++) {
+                if (hex_idx(line[col]) == 0) continue;
+                int16_t x = pox + col;
+                if (x < 0 || x >= 64) continue;
+                g_matrix->drawPixel(x, y, s_base[y * 64 + x]);
+            }
+        }
+    }
 
     const int16_t ox = cx - (int16_t)spr->w / 2;
     const int16_t oy = cy - (int16_t)spr->h / 2;
@@ -212,18 +257,12 @@ void screen_sprite_flash(const SpriteDef* spr, int16_t cx, int16_t cy, uint8_t l
         b = (uint16_t)(b + ((31 - b) * level) / 255);
         pal[i] = (uint16_t)((r << 11) | (g << 5) | b);
     }
-
     for (uint8_t row = 0; row < spr->h; row++) {
         const char* line = spr->rows[row];
         int16_t y = oy + row;
         if (y < 0 || y >= 64) continue;
         for (uint8_t col = 0; col < spr->w; col++) {
-            uint8_t idx;
-            char ch = line[col];
-            if (ch >= '0' && ch <= '9') idx = (uint8_t)(ch - '0');
-            else if (ch >= 'A' && ch <= 'F') idx = (uint8_t)(ch - 'A' + 10);
-            else if (ch >= 'a' && ch <= 'f') idx = (uint8_t)(ch - 'a' + 10);
-            else idx = 0;
+            uint8_t idx = hex_idx(line[col]);
             if (idx == 0) continue;
             int16_t x = ox + col;
             if (x < 0 || x >= 64) continue;
@@ -234,6 +273,7 @@ void screen_sprite_flash(const SpriteDef* spr, int16_t cx, int16_t cy, uint8_t l
     s_prev = spr;
     s_prev_cx = cx;
     s_prev_cy = cy;
+    s_prev_dim = 255;
 }
 
 void screen_text_at(const char* s, int16_t x, int16_t y, uint16_t color) {
