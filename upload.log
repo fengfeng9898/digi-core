@@ -52,7 +52,7 @@ Using manually specified: COM12
 Uploading .pio\build\esp32dev\firmware.bin
 esptool.py v4.5.1
 Serial port COM12
-Connecting....
+Connecting.....
 Chip is ESP32-D0WD-V3 (revision v3.1)
 Features: WiFi, BT, Dual Core, 240MHz, VRef calibration in efuse, Coding Scheme None
 Crystal is 40MHz
@@ -69,61 +69,61 @@ Flash will be erased from 0x0000e000 to 0x0000ffff...
 Flash will be erased from 0x00010000 to 0x00152fff...
 Compressed 17536 bytes to 12202...
 Writing at 0x00001000... (100 %)
-Wrote 17536 bytes (12202 compressed) at 0x00001000 in 0.3 seconds (effective 553.3 kbit/s)...
+Wrote 17536 bytes (12202 compressed) at 0x00001000 in 0.3 seconds (effective 553.0 kbit/s)...
 Hash of data verified.
 Compressed 3072 bytes to 137...
 Writing at 0x00008000... (100 %)
-Wrote 3072 bytes (137 compressed) at 0x00008000 in 0.0 seconds (effective 1337.1 kbit/s)...
+Wrote 3072 bytes (137 compressed) at 0x00008000 in 0.0 seconds (effective 1351.9 kbit/s)...
 Hash of data verified.
 Compressed 8192 bytes to 47...
 Writing at 0x0000e000... (100 %)
-Wrote 8192 bytes (47 compressed) at 0x0000e000 in 0.0 seconds (effective 1913.3 kbit/s)...
+Wrote 8192 bytes (47 compressed) at 0x0000e000 in 0.0 seconds (effective 1915.5 kbit/s)...
 Hash of data verified.
 Compressed 1320272 bytes to 660756...
 Writing at 0x00010000... (2 %)
-Writing at 0x0002263f... (4 %)
-Writing at 0x00036e7e... (7 %)
-Writing at 0x0004db5a... (9 %)
-Writing at 0x00060d04... (12 %)
-Writing at 0x00072d26... (14 %)
-Writing at 0x0007d6d3... (17 %)
-Writing at 0x000898f8... (19 %)
-Writing at 0x00094420... (21 %)
-Writing at 0x000a125f... (24 %)
-Writing at 0x000a6b27... (26 %)
-Writing at 0x000ac43e... (29 %)
-Writing at 0x000b20fd... (31 %)
-Writing at 0x000b773c... (34 %)
-Writing at 0x000bcd8e... (36 %)
-Writing at 0x000c1f83... (39 %)
-Writing at 0x000c722b... (41 %)
-Writing at 0x000cc463... (43 %)
-Writing at 0x000d1888... (46 %)
-Writing at 0x000d6a6a... (48 %)
-Writing at 0x000dbc95... (51 %)
-Writing at 0x000e0e17... (53 %)
-Writing at 0x000e624e... (56 %)
+Writing at 0x00022662... (4 %)
+Writing at 0x00036e85... (7 %)
+Writing at 0x0004db5e... (9 %)
+Writing at 0x00060d08... (12 %)
+Writing at 0x00072d2c... (14 %)
+Writing at 0x0007d6e6... (17 %)
+Writing at 0x000898fd... (19 %)
+Writing at 0x00094425... (21 %)
+Writing at 0x000a1264... (24 %)
+Writing at 0x000a6b33... (26 %)
+Writing at 0x000ac441... (29 %)
+Writing at 0x000b20fe... (31 %)
+Writing at 0x000b773d... (34 %)
+Writing at 0x000bcd95... (36 %)
+Writing at 0x000c1f85... (39 %)
+Writing at 0x000c722d... (41 %)
+Writing at 0x000cc465... (43 %)
+Writing at 0x000d188a... (46 %)
+Writing at 0x000d6a6d... (48 %)
+Writing at 0x000dbc98... (51 %)
+Writing at 0x000e0e19... (53 %)
+Writing at 0x000e6251... (56 %)
 Writing at 0x000eb582... (58 %)
-Writing at 0x000f12db... (60 %)
-Writing at 0x000f6950... (63 %)
-Writing at 0x000fbb95... (65 %)
-Writing at 0x00100fb4... (68 %)
-Writing at 0x001063ad... (70 %)
-Writing at 0x0010b99c... (73 %)
-Writing at 0x0011122a... (75 %)
-Writing at 0x00116f03... (78 %)
-Writing at 0x0011ca10... (80 %)
-Writing at 0x001221e8... (82 %)
-Writing at 0x0012b4ab... (85 %)
-Writing at 0x001331f7... (87 %)
-Writing at 0x001382b4... (90 %)
-Writing at 0x001402cf... (92 %)
-Writing at 0x00145a5c... (95 %)
-Writing at 0x0014ae38... (97 %)
+Writing at 0x000f12de... (60 %)
+Writing at 0x000f6952... (63 %)
+Writing at 0x000fbb98... (65 %)
+Writing at 0x00100fb7... (68 %)
+Writing at 0x001063ae... (70 %)
+Writing at 0x0010b9a1... (73 %)
+Writing at 0x0011122c... (75 %)
+Writing at 0x00116f08... (78 %)
+Writing at 0x0011ca12... (80 %)
+Writing at 0x001221ea... (82 %)
+Writing at 0x0012b4ad... (85 %)
+Writing at 0x001331f9... (87 %)
+Writing at 0x001382b8... (90 %)
+Writing at 0x001402d4... (92 %)
+Writing at 0x00145a64... (95 %)
+Writing at 0x0014ae3a... (97 %)
 Writing at 0x0015065f... (100 %)
-Wrote 1320272 bytes (660756 compressed) at 0x00010000 in 9.5 seconds (effective 1115.2 kbit/s)...
+Wrote 1320272 bytes (660756 compressed) at 0x00010000 in 9.5 seconds (effective 1112.3 kbit/s)...
 Hash of data verified.
 
 Leaving...
 Hard resetting via RTS pin...
-========================= [SUCCESS] Took 21.12 seconds =========================
+========================= [SUCCESS] Took 21.32 seconds =========================
