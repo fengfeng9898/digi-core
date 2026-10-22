@@ -24,7 +24,7 @@ import random
 from PIL import Image, ImageDraw, ImageEnhance
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CW, CH = 64, 40
+CW, CH = 64, 48
 TARGET_H = 46
 COLORS = 15
 B36 = "0123456789ABCDEF"
