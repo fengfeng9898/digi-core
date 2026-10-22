@@ -36,6 +36,7 @@ struct EvRec { uint32_t t; uint8_t k; };
 static EvRec  s_log[16];
 BattleOutcome  g_battle_out = {0, 0, 0, 0, 0, 0, 0};
 uint8_t        g_evolve_fx = 0;
+uint8_t        g_action_fx = 0;
 BattleExchange g_battle_ex[BATTLE_MAX_EX];
 uint8_t        g_battle_ex_n = 0;
 static uint8_t s_head = 0, s_count = 0;
@@ -242,6 +243,7 @@ void pet_new(PetState& p, uint32_t now) {
     p.def = 5;
     p.weight = 10;
     p.discipline = 50;
+    p.line_pick = 0xFF;          // 默认随机进化线
 
     p.birth_epoch = now;
     p.stage_start = now;
@@ -419,7 +421,9 @@ static bool try_evolve(PetState& p, uint32_t now) {
 
     // 蛋：随机挑一条线开始（多线养成）
     if (p.stage == ST_EGG) {
-        const uint8_t line = (uint8_t)random(0, pet_line_count());
+        const uint8_t line = (p.line_pick < pet_line_count())
+                                 ? p.line_pick
+                                 : (uint8_t)random(0, pet_line_count());
         apply_form(p, pet_line_first(line), now);
         g_evolve_fx = 1;                 // 触发进化特效
         log_ev(EV_HATCH, now);
@@ -429,7 +433,8 @@ static bool try_evolve(PetState& p, uint32_t now) {
 
     const uint8_t next = pet_species_next(p.species);
     if (next == SP_NONE) return false;
-    if (p.wins < pet_species_wins(p.species)) return false;          // 胜场门槛（D-3 规则）
+    // 时间到 或 胜场够 —— 任一满足即可进化（胜场可加速）
+    if (now < p.evolve_at && p.wins < pet_species_wins(p.species)) return false;
 
     const uint8_t next_stage = pet_species_stage(next);
     if (next_stage == ST_PERFECT && !(p.items & ITEM_CARD_COURAGE)) return false;  // 究极体硬门槛
@@ -694,7 +699,6 @@ bool pet_action(PetState& p, uint32_t now, const char* cmd, char* msg, size_t n)
 
     if (!strcmp(cmd, "evolve")) {              // 调试：立即结算
         if (try_evolve(p, now)) { copy_msg(msg, n, "EVOLVED!"); return true; }
-        if (now < p.evolve_at) { copy_msg(msg, n, "TOO EARLY"); return false; }
         if (p.wins < pet_species_wins(p.species)) { copy_msg(msg, n, "NEED WINS"); return false; }
         copy_msg(msg, n, "NEED CARD");
         return false;

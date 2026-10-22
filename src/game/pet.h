@@ -1,7 +1,7 @@
 #pragma once
 
 #define PET_MAGIC   0x44494749u   // 'DIGI'
-#define PET_VERSION 2             // 存档结构版本
+#define PET_VERSION 3             // 存档结构版本
 #include <Arduino.h>
 
 // ---------------------------------------------------------------- 阶段/种族 ----
@@ -78,7 +78,7 @@ struct PetState {
     uint8_t  poops;
     uint8_t  sick;
     uint8_t  pending;      // Pending
-    uint8_t  pad;
+    uint8_t  line_pick;    // 选定进化线（0xFF=随机）
 
     // 时间基座（都用 epoch 秒，跨重启连续）
     uint32_t birth_epoch;  // 出生时刻
@@ -116,6 +116,7 @@ struct BattleOutcome {
     uint8_t  enemy_hp;     // 敌方剩余 HP（0..BATTLE_HP）
     uint8_t  exchanges;    // 交换次数
 };
+extern uint8_t         g_action_fx;   // 1喂食 2清洁 3训练 4安抚 5睡觉 6唤醒
 extern uint8_t         g_evolve_fx;   // 1=刚进化，UI 播特效后清零
 
 extern BattleOutcome   g_battle_out;                 // 打完由 UI 读取

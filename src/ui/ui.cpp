@@ -1,4 +1,5 @@
 #include "ui.h"
+#include "../game/pet.h"
 #include "../config.h"
 #include "../panel.h"
 #include "../gfx/sprite.h"
@@ -138,6 +139,55 @@ static void evolve_fx(uint32_t now_ms) {
     if (f) screen_sprite_flash(f, 32, 29, fl);
 }
 
+// ---------------------------------------------------------- 动作特效 ----
+// 喂食/清洁/训练/安抚/睡觉：0.7 秒小动画（现有帧 + 程序化粒子）
+static bool     s_afx_on = false;
+static uint32_t s_afx_t0 = 0;
+static uint8_t  s_afx_kind = 0;
+
+static void action_fx(uint32_t now_ms) {
+    const uint32_t t = now_ms - s_afx_t0;
+    if (t > 700u) { s_afx_on = false; screen_invalidate(); return; }
+
+    const uint8_t kind = s_afx_kind;
+    screen_scene(current_scene());
+
+    int16_t dy = 0, dx = 0;
+    uint8_t dim = 255;
+    switch (kind) {
+        case 1:  dy = (int16_t)(-(int)((t / 70u) % 3)); break;      // 喂食：吧唧
+        case 2:  dy = (int16_t)(-(int)(t / 90u)); break;            // 清洁：上浮
+        case 3:  dx = (int16_t)(((t / 45u) & 1u) ? 2 : -2); break;  // 训练：左右晃
+        case 4:  dy = (int16_t)(-(int)(t / 120u)); break;           // 安抚：上浮
+        case 5: case 6: dim = 150; break;                           // 睡觉/唤醒：压暗
+        default: break;
+    }
+
+    const SpriteDef* f = anim_frame();
+    if (f) screen_sprite(f, (int16_t)(32 + dx), (int16_t)(29 + dy), dim);
+
+    const int16_t cy = (int16_t)(29 + dy - 22);
+    if (kind == 1 || kind == 4) {                    // 爱心
+        const int16_t hx = (int16_t)(22 + (t / 60u) % 16);
+        const int16_t hy = (int16_t)(cy - (int16_t)(t / 25u));
+        screen_rect(hx, hy, 3, 2, 0xF81F);
+        screen_rect((int16_t)(hx + 6), (int16_t)(hy - 3), 3, 2, 0xF81F);
+    } else if (kind == 2) {                          // 泡泡
+        const int16_t b = (int16_t)((t / 40u) % 20);
+        screen_rect((int16_t)(10 + b), (int16_t)(cy + 4), 2, 2, 0x07FF);
+        screen_rect((int16_t)(46 - b), (int16_t)(cy + 10), 2, 2, 0x07FF);
+    } else if (kind == 3) {                          // 打击火花
+        screen_rect(12, (int16_t)(cy + 2), 2, 2, 0xFFE0);
+        screen_rect(50, (int16_t)(cy + 6), 2, 2, 0xFFE0);
+    } else if (kind == 5) {                          // Zzz
+        screen_text_at("Z", 48, (int16_t)(cy + 2), 0x7BEF);
+        screen_text_at("Z", 52, (int16_t)(cy - 6), 0xAD55);
+    } else if (kind == 6) {                          // 唤醒：闪一下
+        screen_rect(30, cy, 6, 2, 0xFFE0);
+        screen_rect(32, (int16_t)(cy - 2), 2, 6, 0xFFE0);
+    }
+}
+
 void ui_render(PetState& p, uint32_t now_ms) {
     if (!g_matrix) return;
     if (now_ms < s_hold_until) return;   // 启动横幅期间不覆盖画面
@@ -145,6 +195,16 @@ void ui_render(PetState& p, uint32_t now_ms) {
     // 进化特效优先
     if (g_evolve_fx) { g_evolve_fx = 0; s_fx_on = true; s_fx_t0 = now_ms; }
     if (s_fx_on) { evolve_fx(now_ms); return; }
+
+    // 动作动画（喂食/清洁/训练/安抚/睡觉）
+    if (g_action_fx) {
+        s_afx_kind = g_action_fx;
+        g_action_fx = 0;
+        s_afx_on = true;
+        s_afx_t0 = now_ms;
+        screen_invalidate();
+    }
+    if (s_afx_on) { action_fx(now_ms); return; }
 
     // ---- 每 30 秒强制整屏重绘一次：任何累积残留都会自愈 ----
     static uint32_t s_last_full = 0;

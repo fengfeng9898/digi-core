@@ -13,6 +13,8 @@
 #include <Update.h>
 #include <ESPmDNS.h>
 
+static void play_action_fx(const char* cmd);   // 动作特效映射（定义在后）
+
 static PetState*  s_pet     = nullptr;
 static WebServer  s_server(80);
 static bool       s_ap_mode = false;
@@ -98,7 +100,10 @@ static void handle_act() {
         battle_start(g_battle_out, millis());
     }
 
-    if (changed) save_store(*s_pet);
+    if (changed) {
+        play_action_fx(cmd.c_str());      // 喂食/清洁/训练/安抚/睡觉 -> 面板动作动画
+        save_store(*s_pet);
+    }
     if (msg[0]) ui_toast(msg);
     s_server.send(200, "application/json", reply_json(changed, msg));
 }
@@ -123,6 +128,32 @@ static void handle_rot() {
     s_server.send(200, "application/json", body);
 }
 
+// 动作特效映射（UI 播 0.7 秒动画）
+static void play_action_fx(const char* cmd) {
+    if      (!strcmp(cmd, "feed"))  g_action_fx = 1;
+    else if (!strcmp(cmd, "clean")) g_action_fx = 2;
+    else if (!strcmp(cmd, "train")) g_action_fx = 3;
+    else if (!strcmp(cmd, "pet"))   g_action_fx = 4;
+    else if (!strcmp(cmd, "sleep")) g_action_fx = 5;
+    else if (!strcmp(cmd, "wake"))  g_action_fx = 6;
+}
+
+// GET /api/line?n=0..4（255=随机）：选定进化线
+static void handle_line() {
+    int n = s_server.arg("n").toInt();
+    if (n < 0 || n > 4) n = 255;
+    s_pet->line_pick = (uint8_t)n;
+    save_store(*s_pet);
+    ui_invalidate();
+    char body[320];
+    int len = snprintf(body, sizeof(body), "{\"ok\":1,\"pick\":%d,\"lines\":[", n);
+    for (uint8_t l = 0; l < pet_line_count() && len < (int)sizeof(body) - 40; l++) {
+        uint8_t sp = pet_line_first(l);
+        len += snprintf(body + len, sizeof(body) - len, "%s\"%s\"", l ? "," : "", pet_species_name_cn(sp));
+    }
+    snprintf(body + len, sizeof(body) - len, "]}");
+    s_server.send(200, "application/json", body);
+}
 static void handle_bright() {
     int v = s_server.arg("v").toInt();
     if (v < 5) v = 5;
@@ -310,6 +341,7 @@ void net_begin(PetState* pet) {
     s_server.on("/api/warp", handle_warp);
     s_server.on("/api/rot", handle_rot);
     s_server.on("/api/reset", HTTP_GET, handle_reset);
+    s_server.on("/api/line", HTTP_GET, handle_line);
     s_server.on("/api/ota/arm", HTTP_GET, handle_ota_arm);
     s_server.on("/api/ota", HTTP_POST, handle_ota_done, handle_ota_upload);
     s_server.on("/api/wifi", HTTP_POST, handle_wifi_save);
