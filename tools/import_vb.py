@@ -25,7 +25,7 @@ from PIL import Image, ImageDraw, ImageEnhance
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CW, CH = 64, 40
-TARGET_H = 40
+TARGET_H = 46
 COLORS = 15
 B36 = "0123456789ABCDEF"
 
@@ -93,7 +93,7 @@ def load_pair(info):
         # 点阵屏上要更分明：提高饱和度与对比度
         _rgb = c.convert("RGB")
         _rgb = ImageEnhance.Color(_rgb).enhance(1.55)
-        _rgb = ImageEnhance.Contrast(_rgb).enhance(1.30)
+        _rgb = ImageEnhance.Contrast(_rgb).enhance(1.08)
         c = Image.merge("RGBA", _rgb.split() + (c.split()[3],))
         out.append(c)
     return out

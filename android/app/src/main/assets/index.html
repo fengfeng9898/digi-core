@@ -119,6 +119,22 @@
   <div class="row"><span class="warn">快进会真的推进宠物年龄，正式养成时别用。</span></div>
 </div>
 
+<div class="sec-t">进化线 / 重置</div>
+<div class="card">
+  <div class="row" style="flex-wrap:wrap;gap:6px">
+    <button onclick="pick(0)">🦖 亚古兽</button>
+    <button onclick="pick(1)">🦕 V仔兽</button>
+    <button onclick="pick(2)">🐰 大耳兽</button>
+    <button onclick="pick(3)">🐹 巴达兽</button>
+    <button onclick="pick(4)">🐱 迪路兽</button>
+    <button onclick="pick(255)">🎲 随机</button>
+  </div>
+  <div class="row" style="margin-top:8px"><span class="muted" id="linepick">当前：—</span></div>
+  <div class="row" style="margin-top:8px">
+    <button onclick="resetGame()" style="background:#7a1f1f">♻️ 重置游戏</button>
+  </div>
+</div>
+
 <div class="sec-t">固件更新（OTA）</div>
 <div class="card">
   <div class="row" style="gap:8px">
@@ -224,6 +240,26 @@ function apply(s){
     div.innerHTML = `<span>${ts}</span><em>${EV[k]||('事件'+k)}</em>`;
     log.appendChild(div);
   }
+}
+
+async function pick(n){
+  try{
+    const r = await fetch(base + '/api/line?n=' + n);
+    const j = await r.json();
+    const names = j.lines || [];
+    $('linepick').textContent = '当前：' + (n === 255 ? '随机' : (names[n] || ('线' + n)));
+    toast(n === 255 ? '已设为随机' : '已选 ' + names[n]);
+  }catch(e){ toast('连接失败'); }
+}
+
+async function resetGame(){
+  if(!confirm('确定重新开始？当前宠物会被清除。')) return;
+  try{
+    const r = await fetch(base + '/api/reset?k=1234');
+    const j = await r.json();
+    toast(j.ok ? '已重置，新蛋' : '重置失败');
+    setTimeout(()=>{ poll(); }, 600);
+  }catch(e){ toast('连接失败'); }
 }
 
 async function ota(){

@@ -164,7 +164,7 @@ static void action_fx(uint32_t now_ms) {
     }
 
     const SpriteDef* f = anim_frame();
-    if (f) screen_sprite(f, (int16_t)(32 + dx), (int16_t)(29 + dy), dim);
+    if (f) screen_sprite(f, (int16_t)(32 + dx), (int16_t)(31 + dy), dim);
 
     const int16_t cy = (int16_t)(29 + dy - 22);
     if (kind == 1 || kind == 4) {                    // 爱心
