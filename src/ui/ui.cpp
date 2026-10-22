@@ -4,6 +4,8 @@
 #include "../gfx/sprite.h"
 #include "../gfx/anim.h"
 #include "../game/clock.h"
+#include "../assets/bg_data.h"
+#include <stdio.h>
 #include <string.h>
 
 // ---------------------------------------------------------------- 颜色 ----
@@ -54,8 +56,108 @@ static void draw_text_centered(const char* s, int16_t y, uint16_t color) {
     g_matrix->print(s);
 }
 
-void ui_set_brightness(uint8_t v) {
-    s_brightness = v;
+// ------------------------------------------------------- 背景 / 云 / 时钟 ----
+static int s_scene = 0;      // 0=白天 1=黑夜
+
+static inline uint8_t bg_idx(char c) {
+    if (c >= '0' && c <= '9') return (uint8_t)(c - '0');
+    if (c >= 'A' && c <= 'V') return (uint8_t)(c - 'A' + 10);
+    return 0;
+}
+
+// 按真实北京时间选场景（6:00-18:00 白天）
+static void pick_scene() {
+    uint32_t bj = (clock_now() + 8UL * 3600UL) % 86400UL;
+    int hour = (int)(bj / 3600);
+    s_scene = (hour >= 6 && hour < 18) ? 0 : 1;
+}
+
+// 背景从 y=8 开始画（顶部 8px 留给状态栏）
+static void draw_bg() {
+    const SceneDef& s = BG_SCENES[s_scene];
+    for (int y = 0; y < s.h; y++) {
+        const char* row = s.rows[y];
+        for (int x = 0; x < s.w; x++) {
+            uint8_t i = bg_idx(row[x]);
+            g_matrix->drawPixel(x, 8 + y, s.pal[i]);
+        }
+    }
+}
+
+// 三朵云，只有它们会动
+static const char* const CL_A[3] = {"...1111...", "..111111..", ".11111111."};
+static const char* const CL_B[3] = {"....111111.....", "..1111111111...", "1111111111111."};
+
+struct Cloud { const char* const* shape; uint8_t w, y; float x, sp; };
+static Cloud s_clouds[3] = {
+    {CL_B, 15, 3, 6.0f, 2.2f},
+    {CL_A, 10, 9, 34.0f, 1.4f},
+    {CL_B, 15, 15, 52.0f, 1.0f},
+};
+static uint32_t s_cloud_last = 0;
+
+static void draw_clouds(uint32_t now_ms) {
+    float dt = 0;
+    if (s_cloud_last) dt = (now_ms - s_cloud_last) / 1000.0f;
+    s_cloud_last = now_ms;
+    if (dt < 0 || dt > 0.5f) dt = 0;      // 掉帧/重启时不要瞬移
+
+    const uint16_t c_main = (s_scene == 0) ? 0xFFFF : 0x18C6;
+    const uint16_t c_shade = (s_scene == 0) ? 0xD6FF : 0x1082;
+
+    for (int i = 0; i < 3; i++) {
+        Cloud& cl = s_clouds[i];
+        cl.x += cl.sp * dt;
+        if (cl.x > PANEL_W + cl.w) cl.x = -(float)cl.w;
+        int ox = (int)cl.x;
+        for (int yy = 0; yy < 3; yy++) {
+            const char* row = cl.shape[yy];
+            for (int xx = 0; xx < cl.w; xx++) {
+                if (row[xx] != '1') continue;
+                int px = ox + xx;
+                if (px < 0 || px >= PANEL_W) continue;
+                g_matrix->drawPixel(px, 8 + cl.y + yy, (yy == 2) ? c_shade : c_main);
+            }
+        }
+    }
+}
+
+static void draw_text_right(const char* s, int16_t y, uint16_t color) {
+    if (!s) return;
+    int n = (int)strlen(s);
+    int x = PANEL_W - n * 6;
+    if (x < 0) x = 0;
+    g_matrix->setTextColor(color);
+    g_matrix->setTextSize(1);
+    g_matrix->setCursor(x, y);
+    g_matrix->print(s);
+}
+
+static const char* short_stage(uint8_t st) {
+    switch (st) {
+        case ST_EGG:     return "EGG";
+        case ST_BABY:    return "BABY";
+        case ST_CHILD:   return "CHILD";
+        case ST_TEEN:    return "TEEN";
+        case ST_ADULT:   return "ADULT";
+        case ST_PERFECT: return "ULT";
+        default:         return "RIP";
+    }
+}
+
+// 左下角 HH:MM（北京时间）
+static void draw_clock() {
+    uint32_t bj = (clock_now() + 8UL * 3600UL) % 86400UL;
+    char buf[8];
+    snprintf(buf, sizeof(buf), "%02u:%02u",
+             (unsigned)(bj / 3600), (unsigned)((bj % 3600) / 60));
+    g_matrix->setTextColor(C_CYAN);
+    g_matrix->setTextSize(1);
+    g_matrix->setCursor(1, 56);
+    g_matrix->print(buf);
+}
+
+void ui_set_brightness(uint8_t v) {    s_brightness = v;
     if (g_matrix) g_matrix->setBrightness8(v);
 }
 
@@ -84,6 +186,11 @@ void ui_render(PetState& p, uint32_t now_ms) {
     if (now_ms < s_hold_until) return;   // 启动横幅期间不覆盖画面
 
     g_matrix->fillScreen(C_BLACK);
+
+    // ---------------- 背景（白天/黑夜 + 飘云）----------------
+    pick_scene();
+    draw_bg();
+    draw_clouds(now_ms);
 
     // ---------------- 状态栏: 饥饿心 + 心情条 ----------------
     for (int i = 0; i < 4; i++) {
@@ -129,24 +236,18 @@ void ui_render(PetState& p, uint32_t now_ms) {
         g_matrix->fillRect(56 + i * 3, 58, 2, 2, 0x8200);
     }
 
-    // ---------------- 底部文字 ----------------
+    // ---------------- 底部：左时钟 / 右阶段 ----------------
     if (now_ms < s_toast_until) {
         draw_text_centered(s_toast, PANEL_H - 7, C_WHITE);
-    } else if (!p.alive) {
-        draw_text_centered("R.I.P.", PANEL_H - 7, C_GRAY);
-    } else if (p.sleeping) {
-        draw_text_centered("ZZZ...", PANEL_H - 7, C_CYAN);
-    } else if (p.stage == ST_EGG) {
-        char buf[12];
-        uint32_t left = pet_evolve_in(p, clock_now());
-        if (left >= 3600) {
-            snprintf(buf, sizeof(buf), "EGG %luh", (unsigned long)(left / 3600));
-        } else {
-            snprintf(buf, sizeof(buf), "EGG %lum", (unsigned long)(left / 60));
-        }
-        draw_text_centered(buf, PANEL_H - 7, C_CYAN);
     } else {
-        draw_text_centered(pet_stage_name(p.stage), PANEL_H - 7, C_GRAY);
+        draw_clock();
+        if (!p.alive) {
+            draw_text_right("RIP", PANEL_H - 7, C_GRAY);
+        } else if (p.sleeping) {
+            draw_text_right("ZZZ", PANEL_H - 7, C_CYAN);
+        } else {
+            draw_text_right(short_stage(p.stage), PANEL_H - 7, C_WHITE);
+        }
     }
 
     g_matrix->flipDMABuffer();

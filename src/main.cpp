@@ -17,6 +17,9 @@ MatrixPanel_I2S_DMA* g_matrix = nullptr;
 PetState g_pet;
 
 static uint32_t s_last_draw = 0;
+static uint32_t s_perf_t    = 0;
+static uint32_t s_frames    = 0;
+static uint32_t s_draw_us   = 0;
 static uint32_t s_last_save = 0;
 static uint32_t s_btn_down  = 0;
 
@@ -98,8 +101,24 @@ void loop() {
 
     // ---- 15 FPS 渲染 ----
     if (ms - s_last_draw >= 66) {
+        uint32_t t0 = micros();
         s_last_draw = ms;
         ui_render(g_pet, ms);
+        s_draw_us += micros() - t0;
+        s_frames++;
+    }
+
+    // ---- 性能观测（每 10 秒一行）----
+    if (s_perf_t == 0) s_perf_t = ms;
+    if (ms - s_perf_t >= 10000u) {
+        float span = (ms - s_perf_t) / 1000.0f;
+        Serial.printf("[perf] fps=%.1f draw=%.2fms/帧 freeheap=%u\n",
+                      s_frames / span,
+                      (s_frames ? s_draw_us / 1000.0f / s_frames : 0.0f),
+                      ESP.getFreeHeap());
+        s_frames = 0;
+        s_draw_us = 0;
+        s_perf_t = ms;
     }
 
     // ---- 5 分钟兜底存档 ----
@@ -122,5 +141,5 @@ void loop() {
         s_btn_down = 0;
     }
 
-    delay(50);
+    delay(2);   // 让出一点 CPU；帧率由上面的 66ms 门控决定
 }
