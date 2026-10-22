@@ -220,6 +220,7 @@ function setBright(v){
   fetch(base + '/api/bright?b=' + v, {cache:'no-store'}).catch(()=>{});
 }
 function apply(s){
+  try{ drawPreview(s); }catch(e){}
   $('st').textContent = STAGE[s.stage] + (s.speciesCn && s.stage>0 ? ' · ' + s.speciesCn : '');
   const hh = String(s.hour).padStart(2,'0'), mm = String(s.min).padStart(2,'0');
   $('meta').textContent = `${s.alive ? (s.sleeping?'睡觉中':'活跃') : '已故'} · ${hh}:${mm} · ${s.scene===0?'白天':'黑夜'}`;
@@ -302,7 +303,7 @@ function drawPreview(state) {
   g.fillStyle = '#ffd166'; g.font = '5px monospace';
   if (state) g.fillText((state.hunger||0) + ' ♥' + (state.mood||0), 2, 5);
 }
-setInterval(() => { if (S) drawPreview(S); }, 120);
+setInterval(function(){ try{ drawPreview(last); }catch(e){} }, 120);
 
 async function pick(n){
   try{
