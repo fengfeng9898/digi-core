@@ -6,7 +6,8 @@
 #include <Arduino.h>
 
 #define FW_NAME     "DIGI-CORE"
-#define FW_VERSION  "0.1.0"
+#define FW_VERSION  "0.5.0"   // 相机 = 战斗交换制 + 双槽存档 + OTA
+#define OTA_KEY     "1234"    // OTA 口令：/api/ota?k=1234（仅限局域网）
 
 // ------------------------------------------------------------------ 屏幕 ----
 #define PANEL_W 64

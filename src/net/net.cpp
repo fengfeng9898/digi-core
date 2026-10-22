@@ -10,6 +10,7 @@
 #include "../panel.h"
 #include <WiFi.h>
 #include <WebServer.h>
+#include <Update.h>
 #include <ESPmDNS.h>
 
 static PetState*  s_pet     = nullptr;
@@ -130,6 +131,68 @@ static void handle_bright() {
     s_server.send(200, "application/json", "{\"ok\":1}");
 }
 
+// ---------------------------------------------------------------- OTA ----
+// POST /api/ota?k=<OTA_KEY>   multipart 上传 firmware.bin
+static bool     s_ota_denied = false;
+static bool     s_ota_armed = false;
+static uint32_t s_ota_arm_until = 0;
+
+// 第一步：GET /api/ota/arm?k=1234 授权 60 秒
+// （不能在 multipart 上传回调里调 server.arg()，会 abort）
+static void handle_ota_arm() {
+    if (s_server.arg("k") != OTA_KEY) {
+        s_server.send(403, "application/json", "{\"ok\":0,\"err\":\"key\"}");
+        return;
+    }
+    s_ota_armed = true;
+    s_ota_arm_until = millis() + 60000u;
+    Serial.println("[ota] armed");
+    s_server.send(200, "application/json", "{\"ok\":1,\"armed\":60000}");
+}
+
+static void handle_ota_done() {
+    const bool ok = !s_ota_denied && !Update.hasError();
+    char body[72];
+    snprintf(body, sizeof(body), "{\"ok\":%d,\"err\":%u,\"denied\":%d}",
+             ok ? 1 : 0, (unsigned)Update.getError(), s_ota_denied ? 1 : 0);
+    s_server.send(200, "application/json", body);
+    if (ok) {
+        Serial.println("[ota] success, rebooting");
+        delay(400);
+        ESP.restart();
+    }
+    s_ota_denied = false;
+    s_ota_armed = false;
+}
+
+static void handle_ota_upload() {
+    HTTPUpload& up = s_server.upload();
+
+    if (up.status == UPLOAD_FILE_START) {
+        s_ota_denied = !s_ota_armed || millis() > s_ota_arm_until;
+        if (s_ota_denied) {
+            Serial.println("[ota] denied: bad key");
+            return;
+        }
+        Serial.printf("[ota] start %s\n", up.filename.c_str());
+        if (!Update.begin(UPDATE_SIZE_UNKNOWN)) {
+            Serial.printf("[ota] begin failed %u\n", (unsigned)Update.getError());
+        }
+    } else if (up.status == UPLOAD_FILE_WRITE) {
+        if (s_ota_denied) return;
+        if (Update.write(up.buf, up.currentSize) != up.currentSize) {
+            Serial.printf("[ota] write failed %u\n", (unsigned)Update.getError());
+        }
+    } else if (up.status == UPLOAD_FILE_END) {
+        if (s_ota_denied) return;
+        if (Update.end(true)) {
+            Serial.printf("[ota] done %u bytes\n", (unsigned)up.totalSize);
+        } else {
+            Serial.printf("[ota] end failed %u\n", (unsigned)Update.getError());
+        }
+    }
+}
+
 // 调试：快进时间，验证 15~30 天节奏时不用真等
 static void handle_warp() {
     int h = s_server.arg("h").toInt();
@@ -231,6 +294,8 @@ void net_begin(PetState* pet) {
     s_server.on("/api/bright", handle_bright);
     s_server.on("/api/warp", handle_warp);
     s_server.on("/api/rot", handle_rot);
+    s_server.on("/api/ota/arm", HTTP_GET, handle_ota_arm);
+    s_server.on("/api/ota", HTTP_POST, handle_ota_done, handle_ota_upload);
     s_server.on("/api/wifi", HTTP_POST, handle_wifi_save);
     s_server.on("/api/wifi/clear", HTTP_POST, handle_wifi_clear);
     s_server.onNotFound(handle_notfound);

@@ -119,6 +119,15 @@
   <div class="row"><span class="warn">快进会真的推进宠物年龄，正式养成时别用。</span></div>
 </div>
 
+<div class="sec-t">固件更新（OTA）</div>
+<div class="card">
+  <div class="row" style="gap:8px">
+    <input id="fw" type="file" accept=".bin" style="flex:1;font-size:12px">
+    <button onclick="ota()">上传</button>
+  </div>
+  <div class="row"><span class="warn">口令 1234 · 更新中别断电 · 完成后设备自动重启</span></div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -214,6 +223,27 @@ function apply(s){
     const ts = String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0');
     div.innerHTML = `<span>${ts}</span><em>${EV[k]||('事件'+k)}</em>`;
     log.appendChild(div);
+  }
+}
+
+async function ota(){
+  const f = $('fw').files[0];
+  if(!base){ toast('还没连接'); return; }
+  if(!f){ toast('先选一个 .bin 固件'); return; }
+  if(!/\.bin$/i.test(f.name)){ toast('只支持 .bin'); return; }
+  if(!confirm('刷入固件 ' + f.name + '（' + Math.round(f.size/1024) + ' KB）？')) return;
+  try{
+    const a = await fetch(base + '/api/ota/arm?k=1234', {cache:'no-store'});
+    if(!a.ok){ toast('OTA 口令错误'); return; }
+    toast('上传中 ' + Math.round(f.size/1024) + ' KB…');
+    const fd = new FormData();
+    fd.append('firmware', f, f.name);
+    const r = await fetch(base + '/api/ota', {method:'POST', body:fd});
+    const j = await r.json();
+    toast(j.ok ? '更新成功，正在重启…' : ('失败 err=' + j.err));
+    if(j.ok) setTimeout(()=>location.reload(), 8000);
+  }catch(e){
+    toast('设备重启中，稍后刷新');
   }
 }
 
