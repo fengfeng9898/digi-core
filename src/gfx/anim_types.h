@@ -9,7 +9,10 @@ enum AnimId : uint8_t {
 
 // 有 GIF 动画的角色（CH_NONE 表示只能用静态精灵）
 enum CharId : uint8_t {
-    CH_NONE = 0, CH_KOROMON, CH_AGUMON, CH_GREYMON, CH_METALGREYMON, CH_JOKER, CH_COUNT
+    CH_NONE = 0,
+    CH_VB_EGG, CH_VB_BOTA, CH_VB_KORO, CH_VB_AGU, CH_VB_GREY,
+    CH_VB_METALGREY, CH_VB_WARGREY, CH_VB_SKULLGREY, CH_VB_GABU,
+    CH_JOKER, CH_COUNT
 };
 
 struct AnimClip {

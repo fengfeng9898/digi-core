@@ -131,7 +131,8 @@ void ui_render(PetState& p, uint32_t now_ms) {
     if (p.sleeping) dim = 96;
     if (!p.alive) dim = 150;
 
-    const CharId ch = anim_char_for_species(p.species);
+    // 死亡时用墓碑静态图，其余用 VB 动画
+    const CharId ch = p.alive ? anim_char_for_species(p.species) : CH_NONE;
     if (ch != CH_NONE) {
         if (anim_char() != ch) anim_play(ch, AN_IDLE, true);
         anim_update(now_ms);

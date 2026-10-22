@@ -25,7 +25,7 @@ static uint8_t  s_pi = 0, s_n = 0;
 static uint8_t  s_drawn_pi = 0xFF;
 static Phase    s_ph[8];
 
-static CharId   s_me = CH_AGUMON, s_en = CH_GREYMON;
+static CharId   s_me = CH_VB_AGU, s_en = CH_VB_GREY;
 static const AnimClip *s_me_idle, *s_me_atk, *s_me_hurt, *s_me_win;
 static const AnimClip *s_en_idle, *s_en_atk, *s_en_hurt, *s_en_win;
 static uint8_t  s_win = 0, s_card = 0;
@@ -68,9 +68,9 @@ static CharId pick_enemy() {
     int r = (int)random(0, 100);
     if (r < 15) return CH_JOKER;
     switch ((int)random(0, 3)) {
-        case 0:  return CH_KOROMON;
-        case 1:  return CH_AGUMON;
-        default: return CH_GREYMON;
+        case 0:  return CH_VB_SKULLGREY;
+        case 1:  return CH_VB_GABU;
+        default: return CH_VB_GREY;
     }
 }
 
@@ -91,7 +91,7 @@ static uint8_t scene_now() {
 
 void battle_start(const BattleOutcome& out, uint32_t now_ms) {
     s_me = anim_char_for_species(out.my_species);
-    if (s_me == CH_NONE) s_me = CH_AGUMON;
+    if (s_me == CH_NONE) s_me = CH_VB_AGU;
     s_en = pick_enemy();
     if (s_en == s_me) s_en = CH_JOKER;
 
@@ -140,10 +140,10 @@ bool battle_active() { return s_active; }
 
 static const char* enemy_name(CharId c) {
     switch (c) {
-        case CH_KOROMON: return "KOROMON!";
-        case CH_AGUMON:  return "AGUMON!";
-        case CH_GREYMON: return "GREYMON!";
-        case CH_JOKER:   return "JOKER!";
+        case CH_VB_SKULLGREY: return "SKULLGREY!";
+        case CH_VB_GABU:  return "GABUMON!";
+        case CH_VB_GREY:  return "GREYMON!";
+        case CH_JOKER:    return "JOKER!";
         default:         return "WILD!";
     }
 }

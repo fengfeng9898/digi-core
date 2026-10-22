@@ -1,6 +1,7 @@
 #include "anim.h"
-#include "../assets/anim_data.h"
+
 #include "../assets/joker_data.h"   // 敌方角色：小丑王
+#include "../assets/vb_data.h"     // Vital Bracelet 精灵（机械暴龙兽/战斗暴龙兽）
 #include "../game/pet.h"
 
 static CharId          s_char = CH_NONE;
@@ -15,10 +16,20 @@ static bool            s_has_result = false;
 static AnimId          s_result = AN_IDLE;
 
 static const CharAnimSet* set_for(CharId c) {
-    for (size_t i = 0; i < sizeof(CHAR_ANIMS) / sizeof(CHAR_ANIMS[0]); i++) {
-        if (CHAR_ANIMS[i].id == c) return &CHAR_ANIMS[i].set;
+    switch (c) {
+        case CH_VB_EGG:        return &VB_EGG_SET;
+        case CH_VB_BOTA:       return &VB_BOTA_SET;
+        case CH_VB_KORO:       return &VB_KORO_SET;
+        case CH_VB_AGU:        return &VB_AGU_SET;
+        case CH_VB_GREY:       return &VB_GREY_SET;
+        case CH_VB_METALGREY:  return &VB_METALGREY_SET;
+        case CH_VB_WARGREY:    return &VB_WARGREY_SET;
+        case CH_VB_SKULLGREY:  return &VB_SKULLGREY_SET;
+        case CH_VB_GABU:       return &VB_GABU_SET;
+        case CH_JOKER:         return &JOKER_SET;
+        default:               return nullptr;
     }
-    if (c == CH_JOKER) return &JOKER_SET;
+
     return nullptr;
 }
 
@@ -102,11 +113,12 @@ void anim_update(uint32_t ms) {
 
 CharId anim_char_for_species(uint8_t species) {
     switch (species) {
-        case SP_KOROMON:       return CH_KOROMON;
-        case SP_AGUMON:        return CH_AGUMON;
-        case SP_GREYMON:       return CH_GREYMON;
-        case SP_METALGREYMON:  return CH_METALGREYMON;   // 暂无素材 -> 静态兜底
-        case SP_WARGREYMON:    return CH_NONE;
+        case SP_EGG:           return CH_VB_EGG;
+        case SP_KOROMON:       return CH_VB_KORO;
+        case SP_AGUMON:        return CH_VB_AGU;
+        case SP_GREYMON:       return CH_VB_GREY;
+        case SP_METALGREYMON:  return CH_VB_METALGREY;
+        case SP_WARGREYMON:    return CH_VB_WARGREY;
         default:               return CH_NONE;
     }
 }
