@@ -54,7 +54,7 @@ void setup() {
 
     HUB75_I2S_CFG cfg(PANEL_W, PANEL_H, PANEL_CHAIN, pins,
                       HUB75_I2S_CFG::SHIFTREG,
-                      /*double_buff=*/true,
+                      /*double_buff=*/false,   // 单缓冲：双缓冲在本板上实测黑屏（ISR 翻转不生效）
                       HUB75_I2S_CFG::HZ_15M,
                       /*latch_blanking=*/PANEL_LATCH_BLANK,
                       /*clkphase=*/true,

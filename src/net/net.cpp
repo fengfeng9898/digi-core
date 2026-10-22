@@ -173,6 +173,14 @@ void net_begin(PetState* pet) {
     String ssid, pass;
     bool have_creds = save_wifi_load(ssid, pass);
 
+    // 没存过 WiFi 时用编译期默认值（config.h 里配的家里 WiFi）
+    if (!have_creds && strlen(WIFI_STA_SSID_DEFAULT) > 0) {
+        ssid = WIFI_STA_SSID_DEFAULT;
+        pass = WIFI_STA_PASS_DEFAULT;
+        have_creds = true;
+        Serial.printf("[net] using built-in WiFi: %s\n", ssid.c_str());
+    }
+
     if (have_creds) {
         WiFi.mode(WIFI_STA);
         WiFi.setSleep(false);

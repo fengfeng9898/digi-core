@@ -40,6 +40,8 @@
 #define PIN_BTN_RESET 0   // 板载 BOOT 键: 长按 3 秒清空 WiFi 配置
 
 // ------------------------------------------------------------------ 网络 ----
+#define WIFI_STA_SSID_DEFAULT "yueyue"        // 没存过 WiFi 时用这个
+#define WIFI_STA_PASS_DEFAULT "ren2317119"
 #define WIFI_AP_PREFIX  "DIGI-CORE-"
 #define WIFI_AP_PASS    "digipet1"
 #define WIFI_STA_TIMEOUT_MS 20000
