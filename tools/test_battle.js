@@ -11,7 +11,17 @@ const raw = fs.readFileSync(path.join(__dirname, '..', 'web', 'data.js'), 'utf8'
 const DATA = JSON.parse(raw.slice(raw.indexOf('=') + 1).trim().replace(/;$/, ''));
 
 const fb = makeFB();
+require(path.join(__dirname, '..', 'web', 'bg.js'));
+const rawBg = fs.readFileSync(path.join(__dirname, '..', 'web', 'bg_data.js'), 'utf8');
+const winObj = {};
+new Function('window', rawBg)(winObj);
+
 const R = new window.DigiRenderer({ getContext: () => fb.ctx }, DATA);
+const bg = new window.DigiBackground(winObj.DIGI_BG);
+R.bg = bg;
+R.sceneMode = 'day';
+const BASE = 1700000000 - (1700000000 % 86400);
+R.nowSec = BASE + 4 * 3600;
 const B = new window.DigiBattle(DATA, R);
 
 function run(name, opts) {

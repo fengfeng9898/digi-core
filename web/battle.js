@@ -149,8 +149,11 @@
       const myBox = this.charBox(this.myChar);
       const enBox = this.charBox(this.enemyChar);
 
+      // 背景：和主界面同一套（白天/黑夜 + 云），顶部 8px 留给血条
       ctx.fillStyle = '#000';
-      ctx.fillRect(0, 0, 64, 64);
+      ctx.fillRect(0, 0, 64, 8);
+      if (this.r && this.r.bg) this.r.bg.draw(ctx, this.r.nowSec || 0, this.r.sceneMode || 'auto');
+      else ctx.fillRect(0, 8, 64, 56);
 
       // ---- 血条 ----
       const myHp = (phase.name === 'hurt' || phase.name === 'end') ? this.hpAfter : this.hpBefore;

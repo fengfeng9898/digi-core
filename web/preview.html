@@ -107,6 +107,12 @@
         <button data-sp="600" onclick="setSpeed(600,this)">600×</button>
         <button data-sp="3600" class="on" onclick="setSpeed(3600,this)">3600×</button>
       </div>
+      <div class="sec" style="margin-top:12px">场景</div>
+      <div class="speeds scenes">
+        <button class="on" onclick="setScene('auto',this)">自动</button>
+        <button onclick="setScene('day',this)">白天</button>
+        <button onclick="setScene('night',this)">黑夜</button>
+      </div>
       <div class="row" style="margin-top:10px">
         <label class="muted"><input type="checkbox" id="auto" checked> 自动照料（喂食/清洁/战斗）</label>
         <button onclick="reset()" style="padding:6px 10px;font-size:12px">重开</button>
@@ -123,9 +129,11 @@
 <div id="toast"></div>
 
 <script src="data.js"></script>
+<script src="bg_data.js"></script>
 <script src="game.js"></script>
 <script src="render.js"></script>
 <script src="battle.js"></script>
+<script src="bg.js"></script>
 <script>
 const { Pet, EV } = DigiGame;
 const EV_CN = {1:'孵化',2:'进化',3:'喂食',4:'清洁',5:'训练',6:'战斗胜利',7:'战斗失败',8:'便便',
@@ -140,6 +148,9 @@ let autoAt = 0;
 
 const pet = new Pet(gameNow);
 const R = new DigiRenderer(document.getElementById('screen'), window.DIGI_DATA);
+const bg = new DigiBackground(window.DIGI_BG);
+R.bg = bg;
+R.sceneMode = 'auto';
 const battle = new DigiBattle(window.DIGI_DATA, R);
 
 function pickEnemy(myChar) {
@@ -185,6 +196,12 @@ function card(id) {
   const r = pet.card(id, gameNow);
   toast(r.msg);
   renderPanel();
+}
+
+function setScene(m, el) {
+  R.sceneMode = m;
+  document.querySelectorAll('.scenes button').forEach(b => b.classList.remove('on'));
+  el.classList.add('on');
 }
 
 function setSpeed(s, el) {
@@ -246,7 +263,8 @@ function loop(ms) {
   gameNow += dt * speed;
   pet.tick(gameNow);
   autoCare();
-  if (battle.active) battle.draw(R.ctx, ms);
+  R.nowSec = gameNow;
+  if (battle.active) battle.draw(R.ctx, ms, gameNow);
   else R.draw(pet, ms, gameNow);
   if (ms - panelAt > 120) { panelAt = ms; renderPanel(); }
   requestAnimationFrame(loop);

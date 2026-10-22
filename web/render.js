@@ -37,21 +37,27 @@
       this.ctx.fillRect(x, y, w, h);
     }
 
-    // 5x7 字库（与真机 glcdfont 相同）
+    // 5x7 字库（与真机 glcdfont 相同），带 1px 黑色描边，压在背景上也看得清
     text(str, x, y, color) {
       if (this.font) {
-        this.ctx.fillStyle = color;
-        for (let i = 0; i < str.length; i++) {
-          let code = str.charCodeAt(i);
-          if (code < 32 || code > 126) code = 63;
-          const g = (code - 32) * 5;
-          for (let col = 0; col < 5; col++) {
-            const bits = this.font[g + col] || 0;
-            for (let row = 0; row < 8; row++) {
-              if (bits & (1 << row)) this.ctx.fillRect(x + i * 6 + col, y + row, 1, 1);
+        const put = (dx, dy, col) => {
+          this.ctx.fillStyle = col;
+          for (let i = 0; i < str.length; i++) {
+            let code = str.charCodeAt(i);
+            if (code < 32 || code > 126) code = 63;
+            const g = (code - 32) * 5;
+            for (let ci = 0; ci < 5; ci++) {
+              const bits = this.font[g + ci] || 0;
+              for (let row = 0; row < 8; row++) {
+                if (bits & (1 << row)) {
+                  this.ctx.fillRect(x + i * 6 + ci + dx, y + row + dy, 1, 1);
+                }
+              }
             }
           }
-        }
+        };
+        put(1, 1, '#000');
+        put(0, 0, color);
         return;
       }
       // 没有字库时退化为浏览器字体
@@ -145,8 +151,15 @@
     // ---------- 整屏 ----------
     draw(pet, nowMs, nowSec) {
       const snap = pet.snapshot(nowSec);
+
+      // 背景（白天/黑夜 + 飘动的云）；顶部 8px 保持黑色给状态栏
       this.ctx.fillStyle = '#000';
-      this.ctx.fillRect(0, 0, 64, 64);
+      this.ctx.fillRect(0, 0, 64, 8);
+      if (this.bg) {
+        this.bg.draw(this.ctx, nowSec, this.sceneMode || 'auto');
+      } else {
+        this.ctx.fillRect(0, 8, 64, 56);
+      }
 
       // 状态栏
       for (let i = 0; i < 4; i++) {
