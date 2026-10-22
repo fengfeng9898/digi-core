@@ -216,4 +216,30 @@ void battle_render(uint32_t ms) {
             screen_sprite(f, 32, 29, dim);
         }
     }
+
+    // ---- 攻击特效（程序化打击）----
+    // HIT!：敌方身上爆开；ENEMY!/OUCH!：我方身上爆开
+    const bool hit_now = !strcmp(ph.name, "HIT!");
+    const bool hurt_now = !strcmp(ph.name, "ENEMY!") || hurt_late;
+    if (hit_now || hurt_now) {
+        const uint32_t ft = t;
+        if (ft < 320u) {
+            const int16_t cx = 32, cy = 31;
+            const uint8_t r = (uint8_t)(1 + ft / 26u);          // 扩散环
+            const uint16_t ring = (ft < 120u) ? 0xFFFF : 0xFFE0;
+            // 十字闪光
+            screen_rect((int16_t)(cx - r), cy, (int16_t)(r * 2 + 1), 1, ring);
+            screen_rect(cx, (int16_t)(cy - r), 1, (int16_t)(r * 2 + 1), ring);
+            // 外圈四角火花
+            if (ft < 220u) {
+                const uint8_t s2 = (uint8_t)(r + 4);
+                screen_rect((int16_t)(cx - s2), (int16_t)(cy - s2), 2, 2, 0xFFE0);
+                screen_rect((int16_t)(cx + s2), (int16_t)(cy - s2), 2, 2, 0xFFE0);
+                screen_rect((int16_t)(cx - s2), (int16_t)(cy + s2), 2, 2, 0xFFE0);
+                screen_rect((int16_t)(cx + s2), (int16_t)(cy + s2), 2, 2, 0xFFE0);
+            }
+            // 中心白核
+            if (ft < 150u) screen_rect((int16_t)(cx - 3), (int16_t)(cy - 3), 7, 7, 0xFFFF);
+        }
+    }
 }
