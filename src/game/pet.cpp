@@ -25,34 +25,65 @@ const char* pet_stage_name(uint8_t stage) {
         case ST_CHILD:   return "CHILD";
         case ST_TEEN:    return "TEEN";
         case ST_ADULT:   return "ADULT";
-        case ST_PERFECT: return "PERFECT";
+        case ST_PERFECT: return "ULTIMATE";
         case ST_DEAD:    return "DEAD";
         default:         return "?";
     }
 }
 
+const char* pet_stage_name_cn(uint8_t stage) {
+    switch (stage) {
+        case ST_EGG:     return "数码蛋";
+        case ST_BABY:    return "幼年期";
+        case ST_CHILD:   return "成长期";
+        case ST_TEEN:    return "成熟期";
+        case ST_ADULT:   return "完全体";
+        case ST_PERFECT: return "究极体";
+        case ST_DEAD:    return "已死亡";
+        default:         return "未知";
+    }
+}
+
 const char* pet_species_name(uint8_t species) {
     switch (species) {
-        case SP_EGG:      return "EGG";
-        case SP_SPROUT:   return "SPROUT";
-        case SP_LEAFLING: return "LEAFLING";
-        case SP_BLOOMON:  return "BLOOMON";
-        case SP_GUARDIAN: return "GUARDIAN";
-        case SP_OMEGA:    return "OMEGA";
-        default:          return "UNKNOWN";
+        case SP_EGG:         return "EGG";
+        case SP_SPROUT:      return "SPROUT";
+        case SP_LEAFLING:    return "LEAFLING";
+        case SP_BLOOMON:     return "BLOOMON";
+        case SP_GUARDIAN:    return "GUARDIAN";
+        case SP_OMEGA_FIRE:  return "BLAZEDRAKE";
+        case SP_OMEGA_WATER: return "TIDELORD";
+        case SP_OMEGA_NATURE:return "VERDANT";
+        default:             return "UNKNOWN";
+    }
+}
+
+const char* pet_species_name_cn(uint8_t species) {
+    switch (species) {
+        case SP_EGG:         return "数码蛋";
+        case SP_SPROUT:      return "芽仔";
+        case SP_LEAFLING:    return "叶芽兽";
+        case SP_BLOOMON:     return "花冠兽";
+        case SP_GUARDIAN:    return "守护兽";
+        case SP_OMEGA_FIRE:  return "炽焰龙";
+        case SP_OMEGA_WATER: return "深潮兽";
+        case SP_OMEGA_NATURE:return "森罗兽";
+        default:             return "未知";
     }
 }
 
 uint8_t pet_sprite_id(const PetState& p) {
-    switch (p.stage) {
-        case ST_EGG:   return SPR_ID_EGG;
-        case ST_BABY:  return SPR_ID_BABY;
-        case ST_CHILD: return SPR_ID_CHILD;
-        case ST_TEEN:  return SPR_ID_TEEN;
-        case ST_ADULT: return SPR_ID_TEEN;    // v0.2 会有独立素材
-        case ST_PERFECT: return SPR_ID_TEEN;
-        case ST_DEAD:  return SPR_ID_DEAD;
-        default:       return SPR_ID_EGG;
+    if (p.stage == ST_DEAD) return SPR_ID_DEAD;
+    switch (p.species) {
+        case SP_EGG:         return SPR_ID_EGG;
+        case SP_SPROUT:      return SPR_ID_BABY;
+        case SP_LEAFLING:    return SPR_ID_CHILD;
+        case SP_BLOOMON:     return SPR_ID_TEEN;
+        case SP_GUARDIAN:    return SPR_ID_TEEN;      // v0.2 独立素材
+        case SP_OMEGA_FIRE:  return SPR_ID_ULT_FIRE;
+        case SP_OMEGA_WATER: return SPR_ID_ULT_WATER;
+        case SP_OMEGA_NATURE:return SPR_ID_ULT_NATURE;
+        default:             return SPR_ID_EGG;
     }
 }
 
@@ -125,12 +156,20 @@ static bool try_evolve(PetState& p, char* msg, size_t n) {
             break;
 
         case ST_ADULT:
+            // 完全体 → 究极体：需要 8 场胜利 + 一张进化卡
+            // 卡的属性决定进化成哪一只究极体（火 > 水 > 自然）
             if (p.wins >= 8 && (p.items & (ITEM_CARD_FIRE | ITEM_CARD_WATER | ITEM_CARD_NATURE))) {
                 p.stage = ST_PERFECT;
-                p.species = SP_OMEGA;
+                if (p.items & ITEM_CARD_FIRE) {
+                    p.species = SP_OMEGA_FIRE;
+                } else if (p.items & ITEM_CARD_WATER) {
+                    p.species = SP_OMEGA_WATER;
+                } else {
+                    p.species = SP_OMEGA_NATURE;
+                }
                 p.stage_age_s = 0;
                 p.atk += 15; p.def += 12;
-                copy_msg(msg, n, "PERFECT!!");
+                copy_msg(msg, n, "ULTIMATE!");
                 return true;
             }
             break;

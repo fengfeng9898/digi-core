@@ -74,9 +74,9 @@ button.d{background:#21262d;color:#f85149;border-color:#f8514944}
 <div class="card">
   <div class="muted" style="margin-bottom:8px">升级卡 · 点击注入</div>
   <div class="cards">
-    <button class="cb" onclick="card('fire')"><b>🔥 进化卡·火</b><span>解锁火系分支</span></button>
-    <button class="cb" onclick="card('water')"><b>💧 进化卡·水</b><span>解锁水系分支</span></button>
-    <button class="cb" onclick="card('nature')"><b>🌿 进化卡·自然</b><span>解锁自然分支</span></button>
+    <button class="cb" onclick="card('fire')"><b>🔥 进化卡·火</b><span>究极体·炽焰龙</span></button>
+    <button class="cb" onclick="card('water')"><b>💧 进化卡·水</b><span>究极体·深潮兽</span></button>
+    <button class="cb" onclick="card('nature')"><b>🌿 进化卡·自然</b><span>究极体·森罗兽</span></button>
     <button class="cb" onclick="card('power')"><b>⚡ 力量卡</b><span>攻击 +5</span></button>
     <button class="cb" onclick="card('guard')"><b>🛡 守护卡</b><span>防御 +5</span></button>
     <button class="cb" onclick="card('heal')"><b>❤️ 回复卡</b><span>体力与心情全满</span></button>
@@ -101,9 +101,9 @@ function toast(m){const e=document.getElementById('toast');e.textContent=m;e.cla
 function pct(v){return Math.max(0,Math.min(100,v));}
 const ITEM_NAMES={1:'火',2:'水',4:'自然',8:'力量',16:'守护',32:'复活'};
 function apply(s){
-  document.getElementById('pname').textContent=s.species;
-  document.getElementById('pstage').textContent=s.stageName+(s.alive?'':' · 已死亡');
-  document.getElementById('pmode').textContent=s.sleeping?'睡眠':(s.stageName==='EGG'?'孵化中':'活动中');
+  document.getElementById('pname').textContent=s.speciesCn||s.species;
+  document.getElementById('pstage').textContent=(s.stageCn||s.stageName)+(s.alive?'':' · 已死亡');
+  document.getElementById('pmode').textContent=s.sleeping?'睡眠':((s.stageName==='EGG')?'孵化中':'活动中');
   const mood=pct(s.mood), hp=pct(s.hp);
   document.getElementById('moodv').textContent=mood;
   document.getElementById('hpv').textContent=hp;

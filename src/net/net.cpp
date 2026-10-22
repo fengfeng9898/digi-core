@@ -18,13 +18,15 @@ static String ip_str() {
 
 static void build_state(String& out) {
     const PetState& p = *s_pet;
-    char buf[560];
+    char buf[768];
     snprintf(buf, sizeof(buf),
-             "{\"stage\":%u,\"stageName\":\"%s\",\"species\":\"%s\",\"hunger\":%u,\"mood\":%u,"
+             "{\"stage\":%u,\"stageName\":\"%s\",\"stageCn\":\"%s\","
+             "\"species\":\"%s\",\"speciesCn\":\"%s\",\"hunger\":%u,\"mood\":%u,"
              "\"hp\":%u,\"atk\":%u,\"def\":%u,\"weight\":%u,\"age\":%lu,\"wins\":%u,\"losses\":%u,"
              "\"mistakes\":%u,\"poops\":%u,\"sleeping\":%u,\"alive\":%u,\"items\":%lu,\"bright\":%u,"
              "\"mode\":\"%s\",\"ip\":\"%s\"}",
-             (unsigned)p.stage, pet_stage_name(p.stage), pet_species_name(p.species),
+             (unsigned)p.stage, pet_stage_name(p.stage), pet_stage_name_cn(p.stage),
+             pet_species_name(p.species), pet_species_name_cn(p.species),
              (unsigned)p.hunger, (unsigned)p.mood, (unsigned)p.hp, (unsigned)p.atk,
              (unsigned)p.def, (unsigned)p.weight, (unsigned long)p.age_s,
              (unsigned)p.wins, (unsigned)p.losses, (unsigned)p.mistakes, (unsigned)p.poops,

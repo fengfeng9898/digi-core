@@ -5,7 +5,8 @@ from PIL import Image, ImageDraw
 SRC = "src/assets/sprites.h"
 SCALE = 5
 CELL = 44
-NAMES = [("EGG", 24), ("BABY", 24), ("CHILD", 32), ("TEEN", 40), ("DEAD", 24)]
+NAMES = [("EGG", 24), ("BABY", 24), ("CHILD", 32), ("TEEN", 40), ("DEAD", 24),
+         ("ULT_FIRE", 40), ("ULT_WATER", 40), ("ULT_NATURE", 40)]
 
 txt = open(SRC, encoding="utf-8").read()
 

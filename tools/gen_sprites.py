@@ -44,6 +44,23 @@ PAL_DEAD = [
     (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0),
 ]
 
+# 究极体三形态：复用成熟期(TEEN)的像素结构，只换身体配色
+PAL_ULT_FIRE = [
+    (0, 0, 0), (26, 10, 14), (228, 74, 52), (255, 150, 110), (150, 30, 26),
+    (255, 246, 240), (24, 8, 12), (255, 196, 60), (255, 226, 96), (255, 240, 170),
+    (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0),
+]
+PAL_ULT_WATER = [
+    (0, 0, 0), (10, 18, 34), (56, 116, 226), (128, 186, 255), (26, 60, 150),
+    (246, 250, 255), (8, 14, 30), (80, 220, 220), (150, 240, 255), (210, 250, 255),
+    (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0),
+]
+PAL_ULT_NATURE = [
+    (0, 0, 0), (12, 26, 16), (74, 186, 108), (146, 242, 168), (36, 108, 70),
+    (246, 255, 246), (10, 22, 14), (232, 140, 60), (255, 226, 120), (250, 245, 180),
+    (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0),
+]
+
 
 def rgb565(c: tuple[int, int, int]) -> int:
     r, g, b = c
@@ -231,12 +248,16 @@ def emit(name: str, grid: Grid, pal, out: list[str]) -> None:
 
 
 def main() -> None:
+    teen = make_teen()
     sprites = [
         ("EGG", make_egg(), PAL_EGG),
         ("BABY", make_baby(), PAL_BABY),
         ("CHILD", make_child(), PAL_CHILD),
-        ("TEEN", make_teen(), PAL_TEEN),
+        ("TEEN", teen, PAL_TEEN),
         ("DEAD", make_dead(), PAL_DEAD),
+        ("ULT_FIRE", teen, PAL_ULT_FIRE),
+        ("ULT_WATER", teen, PAL_ULT_WATER),
+        ("ULT_NATURE", teen, PAL_ULT_NATURE),
     ]
 
     out: list[str] = []
@@ -258,7 +279,11 @@ def main() -> None:
         out.append(f"    {{ {grid.w}, {grid.h}, SPR_{name}, PAL_{name} }},")
     out.append("};")
     out.append("")
-    out.append("enum SpriteId { SPR_ID_EGG = 0, SPR_ID_BABY, SPR_ID_CHILD, SPR_ID_TEEN, SPR_ID_DEAD, SPR_ID_COUNT };")
+    ids = ", ".join(
+        (f"SPR_ID_{name} = 0" if i == 0 else f"SPR_ID_{name}")
+        for i, (name, _, _) in enumerate(sprites)
+    )
+    out.append(f"enum SpriteId {{ {ids}, SPR_ID_COUNT }};")
     out.append("")
 
     os.makedirs(os.path.dirname(OUT), exist_ok=True)

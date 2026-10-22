@@ -1,13 +1,14 @@
 #pragma once
 #include <Arduino.h>
 
-// ---------------------------------------------------------------- 阶段/种族 ----
+// 六级进化链：蛋 → 幼年期 → 成长期 → 成熟期 → 完全体 → 究极体
 enum PetStage : uint8_t {
     ST_EGG = 0, ST_BABY, ST_CHILD, ST_TEEN, ST_ADULT, ST_PERFECT, ST_DEAD
 };
 
 enum PetSpecies : uint8_t {
-    SP_EGG = 0, SP_SPROUT, SP_LEAFLING, SP_BLOOMON, SP_GUARDIAN, SP_OMEGA
+    SP_EGG = 0, SP_SPROUT, SP_LEAFLING, SP_BLOOMON, SP_GUARDIAN,
+    SP_OMEGA_FIRE, SP_OMEGA_WATER, SP_OMEGA_NATURE
 };
 
 // 网页升级卡写入的标记位
@@ -50,8 +51,10 @@ struct PetState {
     uint8_t  crc;
 };
 
-const char* pet_stage_name(uint8_t stage);
+const char* pet_stage_name(uint8_t stage);      // 设备屏幕用（ASCII）
+const char* pet_stage_name_cn(uint8_t stage);   // 网页/飞书用（中文）
 const char* pet_species_name(uint8_t species);
+const char* pet_species_name_cn(uint8_t species);
 uint8_t     pet_sprite_id(const PetState& p);
 
 void pet_new(PetState& p);
