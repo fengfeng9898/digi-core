@@ -122,6 +122,12 @@ button.p{background:#238636;border-color:#2ea043;color:#fff}
 </div>
 
 <div class="card">
+  <div class="row"><span class="muted">重置游戏（回到一颗新蛋）</span></div>
+  <div class="dbg"><button onclick="resetGame()" style="background:#7a1f1f">♻️ 重新开始</button></div>
+  <div class="muted" style="margin-top:8px">会清空当前宠物，选好的进化线保留</div>
+</div>
+
+<div class="card">
   <div class="row"><span class="muted">屏幕亮度</span><span class="num" id="bv">—</span></div>
   <input type="range" id="bright" min="10" max="180" value="70" style="width:100%" oninput="setB(this.value)">
   <div class="row" style="margin-top:12px"><span class="muted">战绩</span><span class="num" id="wl">—</span></div>
@@ -214,6 +220,11 @@ async function pick(n){try{const r=await fetch('/api/line?n='+n);const j=await r
   const names=j.lines||[];
   document.getElementById('linepick').textContent='当前：'+(n===255?'随机':(names[n]||('线'+n)));
   toast(n===255?'已设为随机':'已选 '+names[n]);}catch(e){toast('连接失败');}}
+async function resetGame(){
+  if(!confirm('确定重新开始？当前宠物会被清除。')) return;
+  try{const r=await fetch('/api/reset?k=1234');const j=await r.json();
+    toast(j.ok?'已重置，新蛋':'重置失败');refresh();}catch(e){toast('连接失败');}
+}
 async function card(id){try{const r=await fetch('/api/card?id='+id);const j=await r.json();toast(j.msg||'ok');if(j.state)apply(j.state);}catch(e){toast('连接失败');}refresh();}
 async function setB(v){try{await fetch('/api/bright?v='+v);}catch(e){}}
 async function warp(h){try{const r=await fetch('/api/warp?h='+h);const j=await r.json();toast('快进 '+h+' 小时');if(j.state)apply(j.state);}catch(e){toast('连接失败');}refresh();}

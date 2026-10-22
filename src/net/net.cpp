@@ -176,7 +176,9 @@ static void handle_reset() {
         s_server.send(403, "application/json", "{\"ok\":0,\"err\":\"key\"}");
         return;
     }
+    const uint8_t keep = s_pet->line_pick;   // 保留已选进化线
     pet_new(*s_pet, clock_now());
+    s_pet->line_pick = keep;
     save_store(*s_pet);
     ui_invalidate();
     char body[96];
