@@ -41,8 +41,10 @@ static const CharAnimSet* set_for(CharId c) {
         case CH_VB_NEFERTI: return &VB_NEFERTI_SET;
         case CH_VB_SILPHY: return &VB_SILPHY_SET;
         case CH_VB_HOLYDRA: return &VB_HOLYDRA_SET;
-        case CH_VB_SKULLGREY: return &VB_SKULLGREY_SET;
-        case CH_VB_GABU: return &VB_GABU_SET;
+        case CH_VB_DEVI: return &VB_DEVI_SET;
+        case CH_VB_ETE: return &VB_ETE_SET;
+        case CH_VB_VAMDE: return &VB_VAMDE_SET;
+        case CH_VB_BELPHE_R: return &VB_BELPHE_R_SET;
         case CH_VB_EGG: return &VB_EGG_SET;
         case CH_JOKER: return &JOKER_SET;
         default: return nullptr;

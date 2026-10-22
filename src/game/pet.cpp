@@ -35,6 +35,7 @@ static uint32_t rr(uint32_t lo, uint32_t hi) {
 struct EvRec { uint32_t t; uint8_t k; };
 static EvRec  s_log[16];
 BattleOutcome  g_battle_out = {0, 0, 0, 0, 0, 0, 0};
+uint8_t        g_evolve_fx = 0;
 BattleExchange g_battle_ex[BATTLE_MAX_EX];
 uint8_t        g_battle_ex_n = 0;
 static uint8_t s_head = 0, s_count = 0;
@@ -420,6 +421,7 @@ static bool try_evolve(PetState& p, uint32_t now) {
     if (p.stage == ST_EGG) {
         const uint8_t line = (uint8_t)random(0, pet_line_count());
         apply_form(p, pet_line_first(line), now);
+        g_evolve_fx = 1;                 // 触发进化特效
         log_ev(EV_HATCH, now);
         log_ev(EV_EVOLVE, now);
         return true;
@@ -433,6 +435,7 @@ static bool try_evolve(PetState& p, uint32_t now) {
     if (next_stage == ST_PERFECT && !(p.items & ITEM_CARD_COURAGE)) return false;  // 究极体硬门槛
 
     apply_form(p, next, now);
+    g_evolve_fx = 1;                     // 触发进化特效
     log_ev(EV_EVOLVE, now);
     return true;
 }

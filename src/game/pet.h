@@ -116,6 +116,8 @@ struct BattleOutcome {
     uint8_t  enemy_hp;     // 敌方剩余 HP（0..BATTLE_HP）
     uint8_t  exchanges;    // 交换次数
 };
+extern uint8_t         g_evolve_fx;   // 1=刚进化，UI 播特效后清零
+
 extern BattleOutcome   g_battle_out;                 // 打完由 UI 读取
 extern BattleExchange  g_battle_ex[BATTLE_MAX_EX];   // 交换明细（可回放）
 extern uint8_t         g_battle_ex_n;

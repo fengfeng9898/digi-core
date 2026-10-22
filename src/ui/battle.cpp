@@ -66,11 +66,12 @@ static const SpriteDef* collapse_frame(const AnimClip* c) {
 
 static CharId pick_enemy() {
     int r = (int)random(0, 100);
-    if (r < 15) return CH_JOKER;
+    if (r < 8)  return CH_JOKER;          // 稀有：小丑王（非角色线）
+    if (r < 16) return CH_VB_BELPHE_R;    // BOSS：堕天地狱兽（非角色线）
     switch ((int)random(0, 3)) {
-        case 0:  return CH_VB_SKULLGREY;
-        case 1:  return CH_VB_GABU;
-        default: return CH_VB_GREY;
+        case 0:  return CH_VB_DEVI;
+        case 1:  return CH_VB_ETE;
+        default: return CH_VB_VAMDE;
     }
 }
 
@@ -140,9 +141,9 @@ bool battle_active() { return s_active; }
 
 static const char* enemy_name(CharId c) {
     switch (c) {
-        case CH_VB_SKULLGREY: return "SKULLGREY!";
-        case CH_VB_GABU:  return "GABUMON!";
-        case CH_VB_GREY:  return "GREYMON!";
+        case CH_VB_BELPHE_R: return "BELPHEMON!";
+        case CH_VB_DEVI:  return "DEVIMON!";
+        case CH_VB_ETE:   return "ETEMON!";
         case CH_JOKER:    return "JOKER!";
         default:         return "WILD!";
     }

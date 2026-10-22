@@ -170,8 +170,9 @@ void screen_sprite(const SpriteDef* spr, int16_t cx, int16_t cy, uint8_t dim) {
     const int16_t ox = cx - (int16_t)spr->w / 2;
     const int16_t oy = cy - (int16_t)spr->h / 2;
 
-    bool same_box = s_prev && s_prev_cx == cx && s_prev_cy == cy &&
-                    s_prev->w == spr->w && s_prev->h == spr->h;
+    // 只要不是「同一帧」就整块恢复再画。
+    // （之前对相邻帧做像素差分，一旦面板被别的东西覆写过就会漏画 → 残影）
+    bool same_box = false;
 
     if (!same_box) {
         if (s_prev) {

@@ -34,8 +34,10 @@ enum CharId : uint8_t {
     CH_VB_NEFERTI,
     CH_VB_SILPHY,
     CH_VB_HOLYDRA,
-    CH_VB_SKULLGREY,
-    CH_VB_GABU,
+    CH_VB_DEVI,
+    CH_VB_ETE,
+    CH_VB_VAMDE,
+    CH_VB_BELPHE_R,
     CH_VB_EGG,
     CH_JOKER,
     CH_COUNT

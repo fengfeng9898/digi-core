@@ -103,9 +103,48 @@ void ui_boot(const char* l1, const char* l2) {
     s_bot_key = 0xFFFFFFFF;
 }
 
+// ---------------------------------------------------------- 进化特效 ----
+static bool     s_fx_on = false;
+static uint32_t s_fx_t0 = 0;
+
+// 约 1.6 秒：白屏快闪 -> 黑底新形态闪白 -> 定型 + 残余闪光
+static void evolve_fx(uint32_t now_ms) {
+    const uint32_t t = now_ms - s_fx_t0;
+
+    if (t > 1600u) {
+        s_fx_on = false;
+        screen_invalidate();
+        s_top_key = 0xFFFF;
+        s_bot_key = 0xFFFFFFFF;
+        return;
+    }
+
+    if (t < 480u) {                       // 白屏闪烁
+        g_matrix->fillScreen((((t / 60u) & 1u) == 0) ? 0xFFFF : 0x0000);
+        return;
+    }
+
+    if (t < 840u) {                       // 黑底：新形态闪白
+        g_matrix->fillScreen(0x0000);
+        const SpriteDef* f = anim_frame();
+        if (f) screen_sprite_flash(f, 32, 29, 255);
+        return;
+    }
+
+    // 定型：场景 + 新形态，白闪逐渐衰减
+    const uint8_t fl = (uint8_t)((t < 1100u) ? 170 : (t < 1350u ? 90 : 40));
+    screen_scene(current_scene());
+    const SpriteDef* f = anim_frame();
+    if (f) screen_sprite_flash(f, 32, 29, fl);
+}
+
 void ui_render(PetState& p, uint32_t now_ms) {
     if (!g_matrix) return;
     if (now_ms < s_hold_until) return;   // 启动横幅期间不覆盖画面
+
+    // 进化特效优先
+    if (g_evolve_fx) { g_evolve_fx = 0; s_fx_on = true; s_fx_t0 = now_ms; }
+    if (s_fx_on) { evolve_fx(now_ms); return; }
 
     // ---- 每 30 秒强制整屏重绘一次：任何累积残留都会自愈 ----
     static uint32_t s_last_full = 0;
