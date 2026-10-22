@@ -119,6 +119,12 @@
   <div class="row"><span class="warn">快进会真的推进宠物年龄，正式养成时别用。</span></div>
 </div>
 
+<div class="sec-t">屏幕预览（和面板同步）</div>
+<div class="card" style="text-align:center">
+  <canvas id="previewCanvas" width="256" height="256" style="width:192px;height:192px;image-rendering:pixelated;border-radius:12px;background:#0b0f14"></canvas>
+  <div class="row" style="margin-top:8px"><span class="muted" id="pvLabel">—</span></div>
+</div>
+
 <div class="sec-t">进化线 / 重置</div>
 <div class="card">
   <div class="row" style="flex-wrap:wrap;gap:6px">
@@ -146,6 +152,7 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="vb_data.js"></script>
 <script>
 const EV = {1:'孵化',2:'进化',3:'喂食',4:'清洁',5:'训练',6:'胜利',7:'失败',8:'便便',9:'生病',
             10:'捡到东西',11:'呼唤',12:'睡觉',13:'醒来',14:'使用卡片',15:'死亡',16:'被无视',
@@ -241,6 +248,61 @@ function apply(s){
     log.appendChild(div);
   }
 }
+
+
+// ---------------- 屏幕预览 ----------------
+const PV = { key: null, t0: 0, frame: 0 };
+function pvPickChar(name) {
+  const db = window.DIGI_VB || {};
+  const q = (name || '').toUpperCase().replace(/[^A-Z]/g, '');
+  let best = null;
+  for (const k in db) {
+    const n = (db[k].name || '').toUpperCase().replace(/[^A-Z]/g, '');
+    if (!n) continue;
+    if (n === q) return k;
+    if (!best && q && (n.includes(q) || q.includes(n))) best = k;
+  }
+  return best;
+}
+function drawPreview(state) {
+  const c = document.getElementById('previewCanvas'); if (!c) return;
+  const g = c.getContext('2d');
+  const night = state && state.scene === 1;
+  g.fillStyle = night ? '#0a1030' : '#5fb6f0';
+  g.fillRect(0, 0, 64, 64);
+  g.fillStyle = night ? '#1b2a6b' : '#3f8fd0';
+  g.fillRect(0, 40, 64, 24);
+
+  const key = pvPickChar(state && state.species);
+  if (key && window.DIGI_VB && DIGI_VB[key]) {
+    const ch = DIGI_VB[key];
+    const frames = ch.anims.idle.frames;
+    const now = Date.now();
+    if (PV.key !== key) { PV.key = key; PV.t0 = now; PV.frame = 0; }
+    PV.frame = Math.floor((now - PV.t0) / 400) % frames.length;
+    const rows = frames[PV.frame] || [];
+    const h = rows.length, w = (rows[0] || '').length;
+    const ox = Math.floor((64 - w) / 2), oy = 64 - h - 4;
+    for (let y = 0; y < h; y++) {
+      const line = rows[y];
+      for (let x = 0; x < w; x++) {
+        const ch2 = line[x];
+        if (ch2 === '0' || ch2 === undefined) continue;
+        const idx = parseInt(ch2, 16);
+        const col = ch.pal[idx];
+        g.fillStyle = 'rgb(' + ((col >> 11) * 8) + ',' + (((col >> 5) & 63) * 4) + ',' + ((col & 31) * 8) + ')';
+        g.fillRect(ox + x, oy + y, 1, 1);
+      }
+    }
+    const lb = document.getElementById('pvLabel');
+    if (lb) lb.textContent = (state.stageName || '') + ' · ' + ch.name;
+  }
+  // 顶部/底部 HUD
+  g.fillStyle = '#2a2f45'; g.fillRect(0, 0, 64, 7); g.fillRect(0, 56, 64, 8);
+  g.fillStyle = '#ffd166'; g.font = '5px monospace';
+  if (state) g.fillText((state.hunger||0) + ' ♥' + (state.mood||0), 2, 5);
+}
+setInterval(() => { if (S) drawPreview(S); }, 120);
 
 async function pick(n){
   try{

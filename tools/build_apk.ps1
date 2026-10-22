@@ -24,6 +24,7 @@ New-Item -ItemType Directory -Force -Path "$Build\gen" | Out-Null
 New-Item -ItemType Directory -Force -Path "$Src\assets" | Out-Null
 
 Copy-Item (Join-Path $Root "app\index.html") (Join-Path $Src "assets\index.html") -Force
+Copy-Item (Join-Path $Root "app\vb_data.js") (Join-Path $Src "assets\vb_data.js") -Force
 
 Write-Host "[2/7] javac"
 $files = @(Get-ChildItem "$Src\java" -Recurse -Filter *.java | ForEach-Object { $_.FullName })
