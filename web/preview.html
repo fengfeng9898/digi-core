@@ -125,6 +125,7 @@
 <script src="data.js"></script>
 <script src="game.js"></script>
 <script src="render.js"></script>
+<script src="battle.js"></script>
 <script>
 const { Pet, EV } = DigiGame;
 const EV_CN = {1:'孵化',2:'进化',3:'喂食',4:'清洁',5:'训练',6:'战斗胜利',7:'战斗失败',8:'便便',
@@ -139,6 +140,12 @@ let autoAt = 0;
 
 const pet = new Pet(gameNow);
 const R = new DigiRenderer(document.getElementById('screen'), window.DIGI_DATA);
+const battle = new DigiBattle(window.DIGI_DATA, R);
+
+function pickEnemy(myChar) {
+  const pool = ['koromon', 'agumon', 'greymon'].filter(k => k !== myChar);
+  return pool[Math.floor(Math.random() * pool.length)] || myChar;
+}
 
 function fmt(sec) {
   sec = Math.max(0, Math.floor(sec));
@@ -156,9 +163,20 @@ function toast(msg) {
   t._h = setTimeout(() => t.classList.remove('on'), 1400);
 }
 
-function act(cmd) {
+function act(cmd, silent) {
+  if (battle.active && !silent) return;         // 战斗演出期间不接受新指令
+  const hpBefore = pet.hp;
   const r = pet.act(cmd, gameNow);
-  if (cmd === 'battle' && r.win !== undefined) R.playBattle(null, r.win);
+  if (cmd === 'battle' && r.win !== undefined && !silent) {
+    const myChar = R.charForSpecies(pet.species) || 'agumon';
+    battle.start({
+      win: r.win,
+      myChar,
+      enemyChar: pickEnemy(myChar),
+      hpBefore,
+      hpAfter: pet.hp
+    }, performance.now());
+  }
   toast(r.msg);
   renderPanel();
 }
@@ -183,15 +201,16 @@ function reset() {
 }
 
 function autoCare() {
+  if (battle.active) return;
   if (!document.getElementById('auto').checked) return;
   if (gameNow - autoAt < 7200) return;   // 每 2 游戏小时照料一次
   autoAt = gameNow;
-  if (pet.hunger < 3) act('feed');
-  if (pet.poops > 0) act('clean');
-  if (pet.pending === 2) act('pet');
+  if (pet.hunger < 3) act('feed', true);
+  if (pet.poops > 0) act('clean', true);
+  if (pet.pending === 2) act('pet', true);
   if (pet.stage === 4 && !(pet.items & 1)) card('courage');   // 模拟玩家用勇气卡
-  if (pet.pending === 1 && pet.hp > 25) act('battle');
-  else if (pet.hp > 40 && pet.stage >= 2 && !pet.sleeping && Math.random() < 0.5) act('battle');
+  if (pet.pending === 1 && pet.hp > 25) act('battle', true);
+  else if (pet.hp > 40 && pet.stage >= 2 && !pet.sleeping && Math.random() < 0.5) act('battle', true);
 }
 
 function renderPanel() {
@@ -227,7 +246,8 @@ function loop(ms) {
   gameNow += dt * speed;
   pet.tick(gameNow);
   autoCare();
-  R.draw(pet, ms, gameNow);
+  if (battle.active) battle.draw(R.ctx, ms);
+  else R.draw(pet, ms, gameNow);
   if (ms - panelAt > 120) { panelAt = ms; renderPanel(); }
   requestAnimationFrame(loop);
 }
