@@ -193,7 +193,7 @@ void ui_render(PetState& p, uint32_t now_ms) {
     if (now_ms < s_hold_until) return;   // 启动横幅期间不覆盖画面
 
     // 进化特效优先
-    if (g_evolve_fx) { g_evolve_fx = 0; s_fx_on = true; s_fx_t0 = now_ms; }
+    if (g_evolve_fx) { g_evolve_fx = 0; s_fx_on = true; s_fx_t0 = now_ms; screen_invalidate(); }
     if (s_fx_on) { evolve_fx(now_ms); return; }
 
     // 动作动画（喂食/清洁/训练/安抚/睡觉）

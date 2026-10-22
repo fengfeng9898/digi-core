@@ -107,8 +107,13 @@ void loop() {
     if (ms - s_last_draw >= 66) {
         uint32_t t0 = micros();
         s_last_draw = ms;
-        if (battle_active()) battle_render(ms);
-        else                  ui_render(g_pet, ms);
+        // 渲染器切换（主界面 <-> 战斗）时强制整屏重绘，避免战斗横幅/血条残留
+        static bool s_was_battle = false;
+        const bool now_battle = battle_active();
+        if (now_battle != s_was_battle) { s_was_battle = now_battle; ui_invalidate(); }
+
+        if (now_battle) battle_render(ms);
+        else            ui_render(g_pet, ms);
         s_draw_us += micros() - t0;
         s_frames++;
     }
