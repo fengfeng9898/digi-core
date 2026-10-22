@@ -31,7 +31,8 @@ static void build_state(String& out) {
              "\"wins\":%u,\"losses\":%u,\"mistakes\":%u,\"poops\":%u,"
              "\"sick\":%u,\"pending\":%u,\"pendingIn\":%lu,\"sleeping\":%u,\"alive\":%u,"
              "\"items\":%lu,\"bright\":%u,\"evolveIn\":%lu,\"winsNeed\":%u,"
-             "\"mode\":\"%s\",\"ip\":\"%s\",\"synced\":%u,\"warp\":%ld,\"ev\":[",
+             "\"mode\":\"%s\",\"ip\":\"%s\",\"synced\":%u,\"warp\":%ld,"
+             "\"hour\":%u,\"min\":%u,\"scene\":%u,\"ev\":[",
              (unsigned)p.stage, pet_stage_name(p.stage), pet_stage_name_cn(p.stage),
              pet_species_name(p.species), pet_species_name_cn(p.species),
              (unsigned)p.hunger, (unsigned)p.mood, (unsigned)p.hp, (unsigned)p.atk,
@@ -43,7 +44,11 @@ static void build_state(String& out) {
              (unsigned)ui_get_brightness(), (unsigned long)pet_evolve_in(p, now),
              (unsigned)pet_wins_needed(p.stage),
              s_ap_mode ? "AP" : "LAN", ip_str().c_str(),
-             clock_synced() ? 1 : 0, (long)clock_warp_offset());
+             clock_synced() ? 1 : 0, (long)clock_warp_offset(),
+             (unsigned)(((now + 8UL * 3600UL) % 86400UL) / 3600),
+             (unsigned)(((now + 8UL * 3600UL) % 3600UL) / 60),
+             (unsigned)((((now + 8UL * 3600UL) % 86400UL) / 3600 >= 6 &&
+                         ((now + 8UL * 3600UL) % 86400UL) / 3600 < 18) ? 0 : 1));
 
     out = head;
     const int n = pet_log_count();
