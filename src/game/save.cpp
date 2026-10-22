@@ -1,4 +1,5 @@
 #include "save.h"
+#include <Arduino.h>
 #include "../config.h"
 #include <Preferences.h>
 #include <stddef.h>
@@ -34,10 +35,16 @@ struct SaveRec {
 };
 
 static bool rec_ok(const SaveRec& r) {
-    if (r.magic != REC_MAGIC) return false;
-    if (r.pet.magic != 0x44494749u || r.pet.version != 1) return false;
     const uint8_t want = crc8(reinterpret_cast<const uint8_t*>(&r.pet), offsetof(PetState, crc));
-    return r.pet.crc == want;
+    const bool ok = (r.magic == REC_MAGIC) && (r.pet.magic == 0x44494749u) &&
+                    (r.pet.version == PET_VERSION) && (r.pet.crc == want);
+    if (!ok) {
+        Serial.printf("[save] bad rec mag=%08lX petmag=%08lX ver=%u crc=%u/%u size=%u\n",
+                      (unsigned long)r.magic, (unsigned long)r.pet.magic,
+                      (unsigned)r.pet.version, (unsigned)r.pet.crc, (unsigned)want,
+                      (unsigned)sizeof(PetState));
+    }
+    return ok;
 }
 
 static size_t read_slot(Preferences& prefs, const char* key, SaveRec& r) {
@@ -58,6 +65,10 @@ bool save_load(PetState& p, uint32_t now) {
 
     const bool oka = (na == sizeof(SaveRec)) && rec_ok(a);
     const bool okb = (nb == sizeof(SaveRec)) && rec_ok(b);
+
+    Serial.printf("[save] load A n=%u/%u ok=%d seq=%lu | B n=%u ok=%d seq=%lu\n",
+                  (unsigned)na, (unsigned)sizeof(SaveRec), oka ? 1 : 0, (unsigned long)a.seq,
+                  (unsigned)nb, okb ? 1 : 0, (unsigned long)b.seq);
 
     if (oka && (!okb || a.seq >= b.seq)) {
         p = a.pet;
@@ -95,6 +106,8 @@ void save_store(PetState& p) {
     // 覆盖更旧的那个槽
     const bool to_a = !oka || (okb && a.seq <= b.seq);
     prefs.putBytes(to_a ? SLOT_A : SLOT_B, &rec, sizeof(rec));
+    Serial.printf("[save] store %s seq=%lu size=%u\n",
+                  to_a ? SLOT_A : SLOT_B, (unsigned long)rec.seq, (unsigned)sizeof(rec));
     prefs.end();
 }
 

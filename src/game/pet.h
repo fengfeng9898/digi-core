@@ -1,4 +1,7 @@
 #pragma once
+
+#define PET_MAGIC   0x44494749u   // 'DIGI'
+#define PET_VERSION 2             // 存档结构版本
 #include <Arduino.h>
 
 // ---------------------------------------------------------------- 阶段/种族 ----
