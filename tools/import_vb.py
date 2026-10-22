@@ -21,7 +21,7 @@ import json
 import os
 import random
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageEnhance
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CW, CH = 64, 40
@@ -90,6 +90,11 @@ def load_pair(info):
         w = max(1, round(c.width * s))
         # 预乘 alpha 再缩放，避免透明像素的黑色渗进边缘（黑边）
         c = c.convert("RGBa").resize((w, TARGET_H), Image.LANCZOS).convert("RGBA")
+        # 点阵屏上要更分明：提高饱和度与对比度
+        _rgb = c.convert("RGB")
+        _rgb = ImageEnhance.Color(_rgb).enhance(1.55)
+        _rgb = ImageEnhance.Contrast(_rgb).enhance(1.30)
+        c = Image.merge("RGBA", _rgb.split() + (c.split()[3],))
         out.append(c)
     return out
 
