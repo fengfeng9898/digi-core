@@ -10,5 +10,9 @@ void sprite_draw(Adafruit_GFX& g, const SpriteDef& s, int16_t cx, int16_t cy,
                  uint8_t scale = 1, uint8_t dim = 255);
 
 // 带垂直偏移的待机浮动（上下 1px 循环），用于 idle 动画。
+// 受击闪白（level 0..255，越大越白）
+void sprite_draw_flash(Adafruit_GFX& g, const SpriteDef& s, int16_t cx, int16_t cy,
+                       uint8_t level);
+
 void sprite_draw_bob(Adafruit_GFX& g, const SpriteDef& s, int16_t cx, int16_t cy,
                      uint32_t now_ms, uint8_t scale = 1, uint8_t dim = 255);

@@ -15,13 +15,14 @@ enum ItemFlags : uint32_t {
     ITEM_STRENGTH     = 1u << 3,
     ITEM_GUARD        = 1u << 4,
     ITEM_REVIVE       = 1u << 5,
+    ITEM_BATTLE       = 1u << 6,   // 战斗卡：下一战临时进化
 };
 
 // 事件类型：网页 / 飞书按这个编号翻译成中文
 enum PetEvent : uint8_t {
     EV_HATCH = 1, EV_EVOLVE, EV_FEED, EV_CLEAN, EV_TRAIN, EV_WIN, EV_LOSE,
     EV_POOP, EV_SICK, EV_FOUND, EV_CALL, EV_SLEEP, EV_WAKE, EV_CARD,
-    EV_DEATH, EV_IGNORED, EV_HEAL, EV_PET, EV_WILD
+    EV_DEATH, EV_IGNORED, EV_HEAL, EV_PET, EV_WILD, EV_DEVOLVE
 };
 
 // 需要玩家响应的挂起事件
@@ -65,6 +66,16 @@ struct PetState {
     uint16_t acc_hp;
     uint8_t  crc;
 };
+
+// 最近一场战斗的结果（战斗演出用）
+struct BattleOutcome {
+    uint8_t  win;          // 1=赢
+    uint8_t  card;         // 1=用了战斗卡（临时进化）
+    uint8_t  my_species;   // 参战形态（进化后的）
+    uint16_t hp_before;
+    uint16_t hp_after;
+};
+extern BattleOutcome g_battle_out;     // 打完由 UI 读取
 
 const char* pet_stage_name(uint8_t stage);
 const char* pet_stage_name_cn(uint8_t stage);

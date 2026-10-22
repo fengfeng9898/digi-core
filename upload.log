@@ -24,19 +24,13 @@ Dependency Graph
 |-- WebServer @ 2.0.0
 |-- WiFi @ 2.0.0
 Building in release mode
-Compiling .pio\build\esp32dev\src\main.cpp.o
-In file included from .pio/libdeps/esp32dev/ESP32 HUB75 LED MATRIX PANEL DMA Display/src/ESP32-HUB75-MatrixPanel-I2S-DMA.h:12,
-                 from src/panel.h:2,
-                 from src/main.cpp:9:
-.pio/libdeps/esp32dev/ESP32 HUB75 LED MATRIX PANEL DMA Display/src/platforms/platform_detect.hpp:58:19: note: #pragma message: Compiling for original ESP32 (released 2016)
-   #pragma message "Compiling for original ESP32 (released 2016)"
-                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Compiling .pio\build\esp32dev\src\net\net.cpp.o
 Linking .pio\build\esp32dev\firmware.elf
 Retrieving maximum program size .pio\build\esp32dev\firmware.elf
 Checking size .pio\build\esp32dev\firmware.elf
 Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
-RAM:   [=         ]  14.6% (used 47892 bytes from 327680 bytes)
-Flash: [====      ]  41.8% (used 1313693 bytes from 3145728 bytes)
+RAM:   [=         ]  14.7% (used 48028 bytes from 327680 bytes)
+Flash: [====      ]  43.2% (used 1358497 bytes from 3145728 bytes)
 Building .pio\build\esp32dev\firmware.bin with action:
   "$PYTHONEXE" "$OBJCOPY" --chip esp32 elf2image --flash_mode ${__get_board_flash_mode(__env__)} --flash_freq ${__get_board_f_image(__env__)} --flash_size 4MB --elf-sha256-offset 0xb0 -o $TARGET $SOURCES
 Building .pio\build\esp32dev\firmware.bin
@@ -52,7 +46,7 @@ Using manually specified: COM12
 Uploading .pio\build\esp32dev\firmware.bin
 esptool.py v4.5.1
 Serial port COM12
-Connecting.....
+Connecting....
 Chip is ESP32-D0WD-V3 (revision v3.1)
 Features: WiFi, BT, Dual Core, 240MHz, VRef calibration in efuse, Coding Scheme None
 Crystal is 40MHz
@@ -66,64 +60,64 @@ Configuring flash size...
 Flash will be erased from 0x00001000 to 0x00005fff...
 Flash will be erased from 0x00008000 to 0x00008fff...
 Flash will be erased from 0x0000e000 to 0x0000ffff...
-Flash will be erased from 0x00010000 to 0x00152fff...
+Flash will be erased from 0x00010000 to 0x0015dfff...
 Compressed 17536 bytes to 12202...
 Writing at 0x00001000... (100 %)
-Wrote 17536 bytes (12202 compressed) at 0x00001000 in 0.3 seconds (effective 553.0 kbit/s)...
+Wrote 17536 bytes (12202 compressed) at 0x00001000 in 0.3 seconds (effective 553.2 kbit/s)...
 Hash of data verified.
 Compressed 3072 bytes to 137...
 Writing at 0x00008000... (100 %)
-Wrote 3072 bytes (137 compressed) at 0x00008000 in 0.0 seconds (effective 1351.9 kbit/s)...
+Wrote 3072 bytes (137 compressed) at 0x00008000 in 0.0 seconds (effective 1361.1 kbit/s)...
 Hash of data verified.
 Compressed 8192 bytes to 47...
 Writing at 0x0000e000... (100 %)
-Wrote 8192 bytes (47 compressed) at 0x0000e000 in 0.0 seconds (effective 1915.5 kbit/s)...
+Wrote 8192 bytes (47 compressed) at 0x0000e000 in 0.0 seconds (effective 1925.5 kbit/s)...
 Hash of data verified.
-Compressed 1320272 bytes to 660756...
+Compressed 1365072 bytes to 668238...
 Writing at 0x00010000... (2 %)
-Writing at 0x00022662... (4 %)
-Writing at 0x00036e85... (7 %)
-Writing at 0x0004db5e... (9 %)
-Writing at 0x00060d08... (12 %)
-Writing at 0x00072d2c... (14 %)
-Writing at 0x0007d6e6... (17 %)
-Writing at 0x000898fd... (19 %)
-Writing at 0x00094425... (21 %)
-Writing at 0x000a1264... (24 %)
-Writing at 0x000a6b33... (26 %)
-Writing at 0x000ac441... (29 %)
-Writing at 0x000b20fe... (31 %)
-Writing at 0x000b773d... (34 %)
-Writing at 0x000bcd95... (36 %)
-Writing at 0x000c1f85... (39 %)
-Writing at 0x000c722d... (41 %)
-Writing at 0x000cc465... (43 %)
-Writing at 0x000d188a... (46 %)
-Writing at 0x000d6a6d... (48 %)
-Writing at 0x000dbc98... (51 %)
-Writing at 0x000e0e19... (53 %)
-Writing at 0x000e6251... (56 %)
-Writing at 0x000eb582... (58 %)
-Writing at 0x000f12de... (60 %)
-Writing at 0x000f6952... (63 %)
-Writing at 0x000fbb98... (65 %)
-Writing at 0x00100fb7... (68 %)
-Writing at 0x001063ae... (70 %)
-Writing at 0x0010b9a1... (73 %)
-Writing at 0x0011122c... (75 %)
-Writing at 0x00116f08... (78 %)
-Writing at 0x0011ca12... (80 %)
-Writing at 0x001221ea... (82 %)
-Writing at 0x0012b4ad... (85 %)
-Writing at 0x001331f9... (87 %)
-Writing at 0x001382b8... (90 %)
-Writing at 0x001402d4... (92 %)
-Writing at 0x00145a64... (95 %)
-Writing at 0x0014ae3a... (97 %)
-Writing at 0x0015065f... (100 %)
-Wrote 1320272 bytes (660756 compressed) at 0x00010000 in 9.5 seconds (effective 1112.3 kbit/s)...
+Writing at 0x00024c8a... (4 %)
+Writing at 0x00038999... (7 %)
+Writing at 0x0004f274... (9 %)
+Writing at 0x000636f3... (12 %)
+Writing at 0x000794ad... (14 %)
+Writing at 0x000837a7... (17 %)
+Writing at 0x0008fbaa... (19 %)
+Writing at 0x0009b697... (21 %)
+Writing at 0x000a67cd... (24 %)
+Writing at 0x000b11a6... (26 %)
+Writing at 0x000b6c52... (29 %)
+Writing at 0x000bc26f... (31 %)
+Writing at 0x000c1f97... (34 %)
+Writing at 0x000c7729... (36 %)
+Writing at 0x000ccd90... (39 %)
+Writing at 0x000d2091... (41 %)
+Writing at 0x000d735d... (43 %)
+Writing at 0x000dc5ab... (46 %)
+Writing at 0x000e1926... (48 %)
+Writing at 0x000e6b28... (51 %)
+Writing at 0x000ebcb1... (53 %)
+Writing at 0x000f0dd8... (56 %)
+Writing at 0x000f6374... (58 %)
+Writing at 0x000fb5e9... (60 %)
+Writing at 0x001012bf... (63 %)
+Writing at 0x00106a97... (65 %)
+Writing at 0x0010bbb6... (68 %)
+Writing at 0x00111002... (70 %)
+Writing at 0x00116474... (73 %)
+Writing at 0x0011ba7c... (75 %)
+Writing at 0x001212fe... (78 %)
+Writing at 0x00126f15... (80 %)
+Writing at 0x0012c924... (82 %)
+Writing at 0x00132141... (85 %)
+Writing at 0x0013a9bd... (87 %)
+Writing at 0x001432e8... (90 %)
+Writing at 0x001484b0... (92 %)
+Writing at 0x0014def2... (95 %)
+Writing at 0x00153780... (97 %)
+Writing at 0x00158bba... (100 %)
+Wrote 1365072 bytes (668238 compressed) at 0x00010000 in 9.7 seconds (effective 1126.2 kbit/s)...
 Hash of data verified.
 
 Leaving...
 Hard resetting via RTS pin...
-========================= [SUCCESS] Took 21.32 seconds =========================
+========================= [SUCCESS] Took 22.11 seconds =========================

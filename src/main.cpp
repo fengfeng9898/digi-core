@@ -8,6 +8,7 @@
 #include "config.h"
 #include "panel.h"
 #include "game/pet.h"
+#include "ui/battle.h"
 #include "game/save.h"
 #include "game/clock.h"
 #include "ui/ui.h"
@@ -104,7 +105,8 @@ void loop() {
     if (ms - s_last_draw >= 66) {
         uint32_t t0 = micros();
         s_last_draw = ms;
-        ui_render(g_pet, ms);
+        if (battle_active()) battle_render(ms);
+        else                  ui_render(g_pet, ms);
         s_draw_us += micros() - t0;
         s_frames++;
     }

@@ -18,3 +18,6 @@ CharId anim_char();
 
 // 种族 -> 动画角色
 CharId anim_char_for_species(uint8_t species);
+
+// 取某角色某组动画（战斗演出用）；没有该角色返回 nullptr
+const AnimClip* anim_get(CharId c, AnimId a);

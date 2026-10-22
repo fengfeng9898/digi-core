@@ -95,6 +95,7 @@ button.p{background:#238636;border-color:#2ea043;color:#fff}
   <div class="muted" style="margin-bottom:8px">升级卡 · 点击注入</div>
   <div class="cards">
     <button class="cb" onclick="card('courage')"><b>🦁 勇气卡</b><span>解锁究极体·战斗暴龙兽</span></button>
+    <button class="cb" onclick="card('battle')"><b>⚔️ 战斗卡</b><span>下一战临时进化一级</span></button>
     <button class="cb" onclick="card('power')"><b>⚡ 力量卡</b><span>攻击 +5</span></button>
     <button class="cb" onclick="card('guard')"><b>🛡 守护卡</b><span>防御 +5</span></button>
     <button class="cb" onclick="card('heal')"><b>❤️ 回复卡</b><span>体力与心情全满，治病</span></button>
@@ -126,8 +127,8 @@ button.p{background:#238636;border-color:#2ea043;color:#fff}
 <script>
 let t=null, S=null, alertKind=0;
 const EV={1:'孵化',2:'进化',3:'喂食',4:'清洁',5:'训练',6:'战斗胜利',7:'战斗失败',8:'便便',9:'生病',
-          10:'捡到东西',11:'呼唤',12:'睡觉',13:'醒来',14:'使用卡片',15:'死亡',16:'被无视',17:'治疗',18:'安抚',19:'野生遭遇'};
-const ITEM_NAMES={1:'勇气',8:'力量',16:'守护',32:'复活'};
+          10:'捡到东西',11:'呼唤',12:'睡觉',13:'醒来',14:'使用卡片',15:'死亡',16:'被无视',17:'治疗',18:'安抚',19:'野生遭遇',20:'退化'};
+const ITEM_NAMES={1:'勇气',8:'力量',16:'守护',32:'复活',64:'战斗卡'};
 
 function toast(m){const e=document.getElementById('toast');e.textContent=m;e.classList.add('on');clearTimeout(t);t=setTimeout(()=>e.classList.remove('on'),1600);}
 function pct(v){return Math.max(0,Math.min(100,v));}

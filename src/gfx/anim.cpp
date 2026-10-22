@@ -1,5 +1,6 @@
 #include "anim.h"
 #include "../assets/anim_data.h"
+#include "../assets/joker_data.h"   // 敌方角色：小丑王
 #include "../game/pet.h"
 
 static CharId          s_char = CH_NONE;
@@ -17,6 +18,7 @@ static const CharAnimSet* set_for(CharId c) {
     for (size_t i = 0; i < sizeof(CHAR_ANIMS) / sizeof(CHAR_ANIMS[0]); i++) {
         if (CHAR_ANIMS[i].id == c) return &CHAR_ANIMS[i].set;
     }
+    if (c == CH_JOKER) return &JOKER_SET;
     return nullptr;
 }
 
@@ -107,4 +109,8 @@ CharId anim_char_for_species(uint8_t species) {
         case SP_WARGREYMON:    return CH_NONE;
         default:               return CH_NONE;
     }
+}
+
+const AnimClip* anim_get(CharId c, AnimId a) {
+    return clip_for(set_for(c), a);
 }

@@ -33,6 +33,7 @@ static uint32_t rr(uint32_t lo, uint32_t hi) {
 // ---------------------------------------------------------------- 事件日志 ----
 struct EvRec { uint32_t t; uint8_t k; };
 static EvRec  s_log[16];
+BattleOutcome g_battle_out = {0, 0, 0, 0, 0};
 static uint8_t s_head = 0, s_count = 0;
 
 static void log_ev(uint8_t k, uint32_t now) {
@@ -186,6 +187,24 @@ void pet_new(PetState& p, uint32_t now) {
 }
 
 // ---------------------------------------------------------------- 结算 ----
+// 随机退化：掉到当前阶段以下的任意阶段（最低幼年期，不回蛋）
+static void devolve(PetState& p, uint32_t now) {
+    if (p.stage <= ST_BABY) return;
+    uint8_t lo = ST_BABY;
+    uint8_t hi = (uint8_t)(p.stage - 1);
+    uint8_t ns = (uint8_t)(lo + random(hi - lo + 1));
+
+    p.stage = ns;
+    p.species = ns;                 // 阶段 1..5 与种族编号一一对应
+    p.stage_start = now;
+    p.evolve_at = now + stage_duration(ns);
+    p.wins = 0;                     // 退化后重新攒胜场
+    p.atk = clamp16((int)p.atk * 7 / 10, 1, 99);
+    p.def = clamp16((int)p.def * 7 / 10, 1, 99);
+    p.mood = clamp16((int)p.mood - 15, 0, 100);
+    log_ev(EV_DEVOLVE, now);
+}
+
 static void die(PetState& p, uint32_t now) {
     if (!p.alive) return;
     p.stage = ST_DEAD;
@@ -406,6 +425,19 @@ void pet_tick(PetState& p, uint32_t now) {
         }
     }
 
+    // 随机退化：饿到 0 / 重伤 / 生病，每小时最多判一次
+    static uint32_t s_last_dev_check = 0;
+    if (now - s_last_dev_check >= 3600) {
+        s_last_dev_check = now;
+        if (p.stage >= ST_CHILD && p.alive) {
+            int rate = 0;
+            if (p.hunger == 0) rate += 50;      // 5%/h
+            if (p.hp < 15)     rate += 10;      // 1%/h
+            if (p.sick)        rate += 5;       // 0.5%/h
+            if (rate > 0 && (int)random(0, 1000) < rate) devolve(p, now);
+        }
+    }
+
     if (try_evolve(p, now)) {
         // 进化后重新排事件
         p.next_event = now + event_gap();
@@ -469,6 +501,22 @@ bool pet_action(PetState& p, uint32_t now, const char* cmd, char* msg, size_t n)
         bool ambush = (p.pending == PEND_WILD);
         if (ambush) p.pending = PEND_NONE;
 
+        // 战斗卡：临时进化一级参战，打完回到原阶段
+        uint8_t  card = 0;
+        uint8_t  saved_stage = p.stage, saved_species = p.species;
+        uint16_t saved_atk = p.atk, saved_def = p.def;
+        if ((p.items & ITEM_BATTLE) && p.stage < ST_PERFECT) {
+            p.items &= ~((uint32_t)ITEM_BATTLE);
+            card = 1;
+            p.stage = (uint8_t)(p.stage + 1);
+            p.species = p.stage;
+            p.atk = clamp16((int)p.atk + 8, 1, 99);
+            p.def = clamp16((int)p.def + 6, 1, 99);
+            log_ev(EV_CARD, now);
+        }
+        uint16_t hp_before = p.hp;
+        uint8_t  form = p.species;
+
         // 对手强度以自身攻防为基准（同水平），胜率约 50%；遭遇战 +4。
         // 早期不会因为 atk 低就必输，避免被「1 胜」门槛拖成几十天。
         int base  = p.atk * 2 + p.def;
@@ -492,6 +540,19 @@ bool pet_action(PetState& p, uint32_t now, const char* cmd, char* msg, size_t n)
             copy_msg(msg, n, "YOU LOSE..");
         }
         if (p.hp == 0) { die(p, now); copy_msg(msg, n, "KO..."); }
+
+        // 战后回到原阶段（死亡则不还原，形象留给墓地）
+        if (card && p.alive) {
+            p.stage = saved_stage;
+            p.species = saved_species;
+            p.atk = saved_atk;
+            p.def = saved_def;
+        }
+        g_battle_out.win = win ? 1 : 0;
+        g_battle_out.card = card;
+        g_battle_out.my_species = form;
+        g_battle_out.hp_before = hp_before;
+        g_battle_out.hp_after = p.hp;
         return true;
     }
 
@@ -533,6 +594,13 @@ bool pet_apply_card(PetState& p, uint32_t now, const char* id, char* msg, size_t
         p.items |= ITEM_CARD_COURAGE;
         log_ev(EV_CARD, now);
         copy_msg(msg, n, "COURAGE!");
+        return true;
+    }
+    if (!strcmp(id, "battle")) {                  // 战斗卡：下一战临时进化
+        if (p.items & ITEM_BATTLE) { copy_msg(msg, n, "READY"); return false; }
+        p.items |= ITEM_BATTLE;
+        log_ev(EV_CARD, now);
+        copy_msg(msg, n, "BATTLE CARD");
         return true;
     }
     if (!strcmp(id, "power")) {

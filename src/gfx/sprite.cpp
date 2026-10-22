@@ -46,6 +46,34 @@ void sprite_draw(Adafruit_GFX& g, const SpriteDef& s, int16_t cx, int16_t cy,
     }
 }
 
+// 受击闪白：把每个像素朝白色插值（level 0..255）
+void sprite_draw_flash(Adafruit_GFX& g, const SpriteDef& s, int16_t cx, int16_t cy,
+                       uint8_t level) {
+    const int16_t ox = cx - (int16_t)s.w / 2;
+    const int16_t oy = cy - (int16_t)s.h / 2;
+
+    uint16_t pal[16];
+    for (int i = 0; i < 16; i++) {
+        uint16_t c = s.pal[i];
+        uint16_t r = (c >> 11) & 0x1F;
+        uint16_t gr = (c >> 5) & 0x3F;
+        uint16_t b = c & 0x1F;
+        r = (uint16_t)(r + ((31 - r) * level) / 255);
+        gr = (uint16_t)(gr + ((63 - gr) * level) / 255);
+        b = (uint16_t)(b + ((31 - b) * level) / 255);
+        pal[i] = (uint16_t)((r << 11) | (gr << 5) | b);
+    }
+
+    for (uint8_t row = 0; row < s.h; row++) {
+        const char* line = s.rows[row];
+        for (uint8_t col = 0; col < s.w; col++) {
+            uint8_t idx = hexval(line[col]);
+            if (idx == 0) continue;
+            g.drawPixel(ox + col, oy + row, pal[idx]);
+        }
+    }
+}
+
 void sprite_draw_bob(Adafruit_GFX& g, const SpriteDef& s, int16_t cx, int16_t cy,
                      uint32_t now_ms, uint8_t scale, uint8_t dim) {
     // 2 秒一个循环，上下各 1px：比正弦便宜，肉眼效果一样
