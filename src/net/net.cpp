@@ -5,6 +5,7 @@
 #include "../game/save.h"
 #include "../game/clock.h"
 #include "../game/pet.h"
+#include "../gfx/anim.h"
 #include <WiFi.h>
 #include <WebServer.h>
 #include <ESPmDNS.h>
@@ -82,7 +83,15 @@ static void handle_state() {
 static void handle_act() {
     String cmd = s_server.arg("c");
     char msg[24] = {0};
+    const uint16_t w0 = s_pet->wins;
+    const uint16_t l0 = s_pet->losses;
     bool changed = pet_action(*s_pet, clock_now(), cmd.c_str(), msg, sizeof(msg));
+
+    // 战斗/野遭遇：播「攻击 -> 胜利/受伤」序列
+    if ((cmd == "battle") && (s_pet->wins != w0 || s_pet->losses != l0)) {
+        anim_play_battle(anim_char_for_species(s_pet->species), s_pet->wins != w0);
+    }
+
     if (changed) save_store(*s_pet);
     if (msg[0]) ui_toast(msg);
     s_server.send(200, "application/json", reply_json(changed, msg));

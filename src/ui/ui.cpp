@@ -2,6 +2,7 @@
 #include "../config.h"
 #include "../panel.h"
 #include "../gfx/sprite.h"
+#include "../gfx/anim.h"
 #include "../game/clock.h"
 #include <string.h>
 
@@ -97,12 +98,23 @@ void ui_render(PetState& p, uint32_t now_ms) {
     if (fill > 0) g_matrix->fillRect(mb_x + 1, mb_y + 1, fill, mb_h - 2, mc);
 
     // ---------------- 主体精灵 ----------------
-    const SpriteDef& sp = SPRITES[pet_sprite_id(p)];
     uint8_t dim = 255;
     if (p.sleeping) dim = 96;
     if (!p.alive) dim = 150;
 
-    sprite_draw_bob(*g_matrix, sp, PANEL_W / 2, 34, now_ms, 1, dim);
+    // 有 GIF 动画的角色播动画；没有的（机械暴龙兽/战斗暴龙兽/蛋/墓碑）用静态精灵
+    const CharId ch = anim_char_for_species(p.species);
+    if (ch != CH_NONE) {
+        if (anim_char() != ch) anim_play(ch, AN_IDLE, true);
+        anim_update(now_ms);
+    }
+    const SpriteDef* af = anim_frame();
+    if (af) {
+        sprite_draw(*g_matrix, *af, PANEL_W / 2, 29, 1, dim);
+    } else {
+        const SpriteDef& sp = SPRITES[pet_sprite_id(p)];
+        sprite_draw_bob(*g_matrix, sp, PANEL_W / 2, 34, now_ms, 1, dim);
+    }
 
     // 待响应事件：左上角闪一个感叹号
     if (p.pending != 0 && ((now_ms / 400) & 1)) {
