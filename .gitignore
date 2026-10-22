@@ -1,0 +1,6 @@
+.pio/
+build.log
+build-smoke.log
+__pycache__/
+*.pyc
+bridge/config.json

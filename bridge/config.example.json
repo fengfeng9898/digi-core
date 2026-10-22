@@ -1,0 +1,7 @@
+{
+  "device": "http://192.168.1.50",
+  "app_id": "cli_xxxxxxxxxxxxxxxx",
+  "app_secret": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "poll_seconds": 3,
+  "notify_chat_id": ""
+}
