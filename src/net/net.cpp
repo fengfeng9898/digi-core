@@ -139,6 +139,21 @@ static uint32_t s_ota_arm_until = 0;
 
 // 第一步：GET /api/ota/arm?k=1234 授权 60 秒
 // （不能在 multipart 上传回调里调 server.arg()，会 abort）
+// 调试：GET /api/reset?k=1234 重置成一颗新蛋（清掉测试脏数据）
+static void handle_reset() {
+    if (s_server.arg("k") != OTA_KEY) {
+        s_server.send(403, "application/json", "{\"ok\":0,\"err\":\"key\"}");
+        return;
+    }
+    pet_new(*s_pet, clock_now());
+    save_store(*s_pet);
+    ui_invalidate();
+    char body[96];
+    snprintf(body, sizeof(body), "{\"ok\":1,\"stage\":%u,\"species\":\"%s\"}",
+             (unsigned)s_pet->stage, pet_species_name(s_pet->species));
+    Serial.printf("[reset] new pet\n");
+    s_server.send(200, "application/json", body);
+}
 static void handle_ota_arm() {
     if (s_server.arg("k") != OTA_KEY) {
         s_server.send(403, "application/json", "{\"ok\":0,\"err\":\"key\"}");
@@ -294,6 +309,7 @@ void net_begin(PetState* pet) {
     s_server.on("/api/bright", handle_bright);
     s_server.on("/api/warp", handle_warp);
     s_server.on("/api/rot", handle_rot);
+    s_server.on("/api/reset", HTTP_GET, handle_reset);
     s_server.on("/api/ota/arm", HTTP_GET, handle_ota_arm);
     s_server.on("/api/ota", HTTP_POST, handle_ota_done, handle_ota_upload);
     s_server.on("/api/wifi", HTTP_POST, handle_wifi_save);

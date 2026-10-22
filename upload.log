@@ -25,31 +25,7 @@ Dependency Graph
 |-- WebServer @ 2.0.0
 |-- WiFi @ 2.0.0
 Building in release mode
-Compiling .pio\build\esp32dev\src\game\pet.cpp.o
-Compiling .pio\build\esp32dev\src\game\save.cpp.o
-Compiling .pio\build\esp32dev\src\gfx\anim.cpp.o
-Compiling .pio\build\esp32dev\src\main.cpp.o
 Compiling .pio\build\esp32dev\src\net\net.cpp.o
-Compiling .pio\build\esp32dev\src\ui\battle.cpp.o
-Compiling .pio\build\esp32dev\src\ui\ui.cpp.o
-In file included from .pio/libdeps/esp32dev/ESP32 HUB75 LED MATRIX PANEL DMA Display/src/ESP32-HUB75-MatrixPanel-I2S-DMA.h:12,
-                 from src/panel.h:2,
-                 from src/main.cpp:9:
-.pio/libdeps/esp32dev/ESP32 HUB75 LED MATRIX PANEL DMA Display/src/platforms/platform_detect.hpp:58:19: note: #pragma message: Compiling for original ESP32 (released 2016)
-   #pragma message "Compiling for original ESP32 (released 2016)"
-                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-In file included from .pio/libdeps/esp32dev/ESP32 HUB75 LED MATRIX PANEL DMA Display/src/ESP32-HUB75-MatrixPanel-I2S-DMA.h:12,
-                 from src/ui/../panel.h:2,
-                 from src/ui/battle.cpp:4:
-.pio/libdeps/esp32dev/ESP32 HUB75 LED MATRIX PANEL DMA Display/src/platforms/platform_detect.hpp:58:19: note: #pragma message: Compiling for original ESP32 (released 2016)
-   #pragma message "Compiling for original ESP32 (released 2016)"
-                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-In file included from .pio/libdeps/esp32dev/ESP32 HUB75 LED MATRIX PANEL DMA Display/src/ESP32-HUB75-MatrixPanel-I2S-DMA.h:12,
-                 from src/ui/../panel.h:2,
-                 from src/ui/ui.cpp:3:
-.pio/libdeps/esp32dev/ESP32 HUB75 LED MATRIX PANEL DMA Display/src/platforms/platform_detect.hpp:58:19: note: #pragma message: Compiling for original ESP32 (released 2016)
-   #pragma message "Compiling for original ESP32 (released 2016)"
-                   ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 In file included from .pio/libdeps/esp32dev/ESP32 HUB75 LED MATRIX PANEL DMA Display/src/ESP32-HUB75-MatrixPanel-I2S-DMA.h:12,
                  from src/net/../panel.h:2,
                  from src/net/net.cpp:10:
@@ -61,7 +37,7 @@ Retrieving maximum program size .pio\build\esp32dev\firmware.elf
 Checking size .pio\build\esp32dev\firmware.elf
 Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
 RAM:   [==        ]  17.3% (used 56676 bytes from 327680 bytes)
-Flash: [======    ]  56.8% (used 1116221 bytes from 1966080 bytes)
+Flash: [========  ]  75.1% (used 1476765 bytes from 1966080 bytes)
 Building .pio\build\esp32dev\firmware.bin with action:
   "$PYTHONEXE" "$OBJCOPY" --chip esp32 elf2image --flash_mode ${__get_board_flash_mode(__env__)} --flash_freq ${__get_board_f_image(__env__)} --flash_size 4MB --elf-sha256-offset 0xb0 -o $TARGET $SOURCES
 Building .pio\build\esp32dev\firmware.bin
@@ -77,7 +53,7 @@ Using manually specified: COM12
 Uploading .pio\build\esp32dev\firmware.bin
 esptool.py v4.5.1
 Serial port COM12
-Connecting......
+Connecting...........
 Chip is ESP32-D0WD-V3 (revision v3.1)
 Features: WiFi, BT, Dual Core, 240MHz, VRef calibration in efuse, Coding Scheme None
 Crystal is 40MHz
@@ -91,61 +67,65 @@ Configuring flash size...
 Flash will be erased from 0x00001000 to 0x00005fff...
 Flash will be erased from 0x00008000 to 0x00008fff...
 Flash will be erased from 0x0000e000 to 0x0000ffff...
-Flash will be erased from 0x00010000 to 0x00122fff...
+Flash will be erased from 0x00010000 to 0x0017afff...
 Compressed 17536 bytes to 12202...
 Writing at 0x00001000... (100 %)
-Wrote 17536 bytes (12202 compressed) at 0x00001000 in 0.3 seconds (effective 552.0 kbit/s)...
+Wrote 17536 bytes (12202 compressed) at 0x00001000 in 0.3 seconds (effective 551.7 kbit/s)...
 Hash of data verified.
 Compressed 3072 bytes to 113...
 Writing at 0x00008000... (100 %)
-Wrote 3072 bytes (113 compressed) at 0x00008000 in 0.0 seconds (effective 1386.3 kbit/s)...
+Wrote 3072 bytes (113 compressed) at 0x00008000 in 0.0 seconds (effective 1359.4 kbit/s)...
 Hash of data verified.
 Compressed 8192 bytes to 47...
 Writing at 0x0000e000... (100 %)
-Wrote 8192 bytes (47 compressed) at 0x0000e000 in 0.0 seconds (effective 2240.7 kbit/s)...
+Wrote 8192 bytes (47 compressed) at 0x0000e000 in 0.0 seconds (effective 1891.7 kbit/s)...
 Hash of data verified.
-Compressed 1122800 bytes to 615529...
+Compressed 1483344 bytes to 678639...
 Writing at 0x00010000... (2 %)
-Writing at 0x000278b7... (5 %)
-Writing at 0x0004101d... (7 %)
-Writing at 0x0004d0b4... (10 %)
-Writing at 0x00059510... (13 %)
-Writing at 0x000636b7... (15 %)
-Writing at 0x00071a19... (18 %)
-Writing at 0x00077255... (21 %)
-Writing at 0x0007c694... (23 %)
-Writing at 0x000824d3... (26 %)
-Writing at 0x00087b40... (28 %)
-Writing at 0x0008d165... (31 %)
-Writing at 0x000925af... (34 %)
-Writing at 0x000979e2... (36 %)
-Writing at 0x0009cb1f... (39 %)
-Writing at 0x000a200f... (42 %)
-Writing at 0x000a7183... (44 %)
-Writing at 0x000ac369... (47 %)
-Writing at 0x000b1515... (50 %)
-Writing at 0x000b6977... (52 %)
-Writing at 0x000bbadc... (55 %)
-Writing at 0x000c176d... (57 %)
-Writing at 0x000c7047... (60 %)
-Writing at 0x000cc265... (63 %)
-Writing at 0x000d16a3... (65 %)
-Writing at 0x000d68bd... (68 %)
-Writing at 0x000dbfbd... (71 %)
-Writing at 0x000e174c... (73 %)
-Writing at 0x000e7299... (76 %)
-Writing at 0x000ecde5... (78 %)
-Writing at 0x000f2663... (81 %)
-Writing at 0x000facfd... (84 %)
-Writing at 0x001034c5... (86 %)
-Writing at 0x00108a8a... (89 %)
-Writing at 0x0010e55d... (92 %)
-Writing at 0x001140c6... (94 %)
-Writing at 0x001196c0... (97 %)
-Writing at 0x0011ed35... (100 %)
-Wrote 1122800 bytes (615529 compressed) at 0x00010000 in 8.6 seconds (effective 1045.8 kbit/s)...
+Writing at 0x00026f80... (4 %)
+Writing at 0x000414be... (7 %)
+Writing at 0x0005b111... (9 %)
+Writing at 0x00075d9d... (11 %)
+Writing at 0x0008ee70... (14 %)
+Writing at 0x0009b9a2... (16 %)
+Writing at 0x000a7689... (19 %)
+Writing at 0x000b3dd3... (21 %)
+Writing at 0x000bcf0d... (23 %)
+Writing at 0x000cab26... (26 %)
+Writing at 0x000d02c0... (28 %)
+Writing at 0x000d5fa4... (30 %)
+Writing at 0x000db2dd... (33 %)
+Writing at 0x000e1049... (35 %)
+Writing at 0x000e695f... (38 %)
+Writing at 0x000ebddb... (40 %)
+Writing at 0x000f1582... (42 %)
+Writing at 0x000f6806... (45 %)
+Writing at 0x000fb968... (47 %)
+Writing at 0x00100bd1... (50 %)
+Writing at 0x00105fb7... (52 %)
+Writing at 0x0010b1d4... (54 %)
+Writing at 0x001103e7... (57 %)
+Writing at 0x001156d3... (59 %)
+Writing at 0x0011a94b... (61 %)
+Writing at 0x001203bf... (64 %)
+Writing at 0x00125b7a... (66 %)
+Writing at 0x0012afc3... (69 %)
+Writing at 0x0013024b... (71 %)
+Writing at 0x00135714... (73 %)
+Writing at 0x0013acbc... (76 %)
+Writing at 0x00140359... (78 %)
+Writing at 0x00145ab9... (80 %)
+Writing at 0x0014ba56... (83 %)
+Writing at 0x0015135b... (85 %)
+Writing at 0x0015927f... (88 %)
+Writing at 0x001604e1... (90 %)
+Writing at 0x00167877... (92 %)
+Writing at 0x0016cbdc... (95 %)
+Writing at 0x001723e4... (97 %)
+Writing at 0x00177c4c... (100 %)
+Wrote 1483344 bytes (678639 compressed) at 0x00010000 in 10.2 seconds (effective 1157.9 kbit/s)...
 Hash of data verified.
 
 Leaving...
 Hard resetting via RTS pin...
-========================= [SUCCESS] Took 21.95 seconds =========================
+========================= [SUCCESS] Took 24.34 seconds =========================

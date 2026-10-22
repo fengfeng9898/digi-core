@@ -10,8 +10,32 @@ enum PetStage : uint8_t {
 };
 
 enum PetSpecies : uint8_t {
-    SP_EGG = 0, SP_KOROMON, SP_AGUMON, SP_GREYMON, SP_METALGREYMON, SP_WARGREYMON
+    SP_EGG = 0,
+    // 线 0：亚古兽
+    SP_KOROMON, SP_AGUMON, SP_GREYMON, SP_METALGREYMON, SP_WARGREYMON,
+    // 线 1：V 仔兽
+    SP_CHIBIMON, SP_VMON, SP_XVMON, SP_PAILDRAMON, SP_IMPERIALDRAMON,
+    // 线 2：大耳兽
+    SP_GUMMYMON, SP_TERRIERMON, SP_GALGOMON, SP_RAPIDMON, SP_SAINTGALGOMON,
+    // 线 3：巴达兽
+    SP_PATAMON, SP_ANGEMON, SP_HOLYANGEMON, SP_SERAPHIMON,
+    // 线 4：迪路兽
+    SP_TAILMON, SP_NEFERTIMON, SP_SILPHYMON, SP_HOLYDRAMON,
+    SP_COUNT
 };
+
+#define SP_NONE 0xFF
+
+// 物种表访问（实现在 pet.cpp）
+uint8_t pet_species_stage(uint8_t sp);
+uint8_t pet_species_next(uint8_t sp);
+uint8_t pet_species_wins(uint8_t sp);
+uint8_t pet_species_char(uint8_t sp);
+uint8_t pet_species_line(uint8_t sp);
+uint8_t pet_line_count();
+uint8_t pet_line_first(uint8_t line);
+uint8_t pet_line_len(uint8_t line);
+uint8_t pet_devolve_target(uint8_t sp, uint8_t min_stage);
 
 enum ItemFlags : uint32_t {
     ITEM_CARD_COURAGE = 1u << 0,

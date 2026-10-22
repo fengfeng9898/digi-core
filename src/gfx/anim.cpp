@@ -17,20 +17,36 @@ static AnimId          s_result = AN_IDLE;
 
 static const CharAnimSet* set_for(CharId c) {
     switch (c) {
-        case CH_VB_EGG:        return &VB_EGG_SET;
-        case CH_VB_BOTA:       return &VB_BOTA_SET;
-        case CH_VB_KORO:       return &VB_KORO_SET;
-        case CH_VB_AGU:        return &VB_AGU_SET;
-        case CH_VB_GREY:       return &VB_GREY_SET;
-        case CH_VB_METALGREY:  return &VB_METALGREY_SET;
-        case CH_VB_WARGREY:    return &VB_WARGREY_SET;
-        case CH_VB_SKULLGREY:  return &VB_SKULLGREY_SET;
-        case CH_VB_GABU:       return &VB_GABU_SET;
-        case CH_JOKER:         return &JOKER_SET;
-        default:               return nullptr;
+        case CH_VB_BOTA: return &VB_BOTA_SET;
+        case CH_VB_KORO: return &VB_KORO_SET;
+        case CH_VB_AGU: return &VB_AGU_SET;
+        case CH_VB_GREY: return &VB_GREY_SET;
+        case CH_VB_METALGREY: return &VB_METALGREY_SET;
+        case CH_VB_WARGREY: return &VB_WARGREY_SET;
+        case CH_VB_CHIBI: return &VB_CHIBI_SET;
+        case CH_VB_V: return &VB_V_SET;
+        case CH_VB_XV: return &VB_XV_SET;
+        case CH_VB_PAILDRA: return &VB_PAILDRA_SET;
+        case CH_VB_IMPERIAL: return &VB_IMPERIAL_SET;
+        case CH_VB_PATA: return &VB_PATA_SET;
+        case CH_VB_ANGE: return &VB_ANGE_SET;
+        case CH_VB_HOLYANGE: return &VB_HOLYANGE_SET;
+        case CH_VB_SERAPHI: return &VB_SERAPHI_SET;
+        case CH_VB_GUMMY: return &VB_GUMMY_SET;
+        case CH_VB_TERRIER: return &VB_TERRIER_SET;
+        case CH_VB_GALGO: return &VB_GALGO_SET;
+        case CH_VB_RAPID: return &VB_RAPID_SET;
+        case CH_VB_SAINTGALGO: return &VB_SAINTGALGO_SET;
+        case CH_VB_TAILMON: return &VB_TAILMON_SET;
+        case CH_VB_NEFERTI: return &VB_NEFERTI_SET;
+        case CH_VB_SILPHY: return &VB_SILPHY_SET;
+        case CH_VB_HOLYDRA: return &VB_HOLYDRA_SET;
+        case CH_VB_SKULLGREY: return &VB_SKULLGREY_SET;
+        case CH_VB_GABU: return &VB_GABU_SET;
+        case CH_VB_EGG: return &VB_EGG_SET;
+        case CH_JOKER: return &JOKER_SET;
+        default: return nullptr;
     }
-
-    return nullptr;
 }
 
 static const AnimClip* clip_for(const CharAnimSet* s, AnimId a) {
@@ -113,13 +129,7 @@ void anim_update(uint32_t ms) {
 
 CharId anim_char_for_species(uint8_t species) {
     switch (species) {
-        case SP_EGG:           return CH_VB_EGG;
-        case SP_KOROMON:       return CH_VB_KORO;
-        case SP_AGUMON:        return CH_VB_AGU;
-        case SP_GREYMON:       return CH_VB_GREY;
-        case SP_METALGREYMON:  return CH_VB_METALGREY;
-        case SP_WARGREYMON:    return CH_VB_WARGREY;
-        default:               return CH_NONE;
+        default:               return (CharId)pet_species_char(species);
     }
 }
 

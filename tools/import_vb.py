@@ -31,15 +31,16 @@ B36 = "0123456789ABCDEF"
 
 # id -> 固件里的枚举名（CH_xxx）
 CHAR_NAMES = {
-    "bota":         "VB_BOTA",
-    "koro":         "VB_KORO",
-    "agu":          "VB_AGU",
-    "grey":         "VB_GREY",
-    "metalgrey_va": "VB_METALGREY",
-    "wargrey":      "VB_WARGREY",
-    "skullgrey":    "VB_SKULLGREY",
-    "gabu":         "VB_GABU",
-    "egggggg":      "VB_EGG",
+    "bota": "VB_BOTA", "koro": "VB_KORO", "agu": "VB_AGU", "grey": "VB_GREY",
+    "metalgrey_va": "VB_METALGREY", "wargrey": "VB_WARGREY",
+    "chibi": "VB_CHIBI", "v": "VB_V", "xv": "VB_XV",
+    "paildra": "VB_PAILDRA", "imperialdra_f": "VB_IMPERIAL",
+    "pata": "VB_PATA", "ange": "VB_ANGE", "holyange": "VB_HOLYANGE", "seraphi": "VB_SERAPHI",
+    "gummy": "VB_GUMMY", "terrier": "VB_TERRIER", "galgo": "VB_GALGO",
+    "rapid": "VB_RAPID", "saintgalgo": "VB_SAINTGALGO",
+    "tail_c": "VB_TAILMON", "neferti": "VB_NEFERTI", "silphy": "VB_SILPHY", "holydra": "VB_HOLYDRA",
+    "skullgrey": "VB_SKULLGREY", "gabu": "VB_GABU",
+    "egggggg": "VB_EGG",
 }
 
 

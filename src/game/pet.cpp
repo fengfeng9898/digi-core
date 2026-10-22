@@ -1,4 +1,5 @@
 #include "pet.h"
+#include "../gfx/anim_types.h"   // CharId（物种表里映射动画角色）
 #include "../config.h"
 #include "../assets/sprites.h"
 #include <string.h>
@@ -92,29 +93,89 @@ const char* pet_stage_name_cn(uint8_t stage) {
     }
 }
 
-const char* pet_species_name(uint8_t species) {
-    switch (species) {
-        case SP_EGG:           return "EGG";
-        case SP_KOROMON:       return "KOROMON";
-        case SP_AGUMON:        return "AGUMON";
-        case SP_GREYMON:       return "GREYMON";
-        case SP_METALGREYMON:  return "METALGREY";
-        case SP_WARGREYMON:    return "WARGREYMON";
-        default:               return "UNKNOWN";
-    }
+// ------------------------------------------------------- 物种表（多进化线）----
+// 一条线 = 从幼年期到究极体的物种序列；进化要「胜场 + 时间」双门槛。
+struct SpeciesRow {
+    uint8_t     stage;     // PetStage
+    uint8_t     line;      // 进化线编号
+    uint8_t     next;      // 下一物种（SP_NONE = 终点）
+    uint8_t     wins;      // 进化到 next 需要的胜场
+    uint8_t     ch;        // 动画角色 CharId（255 = 无）
+    const char* name;
+    const char* name_cn;
+};
+
+static const SpeciesRow SP_TBL[SP_COUNT] = {
+    /* 0  SP_EGG          */ {ST_EGG,  0xFF, SP_NONE,          0,  CH_VB_EGG,        "EGG",           "数码蛋"},
+    // ---- 线 0：亚古兽 ----
+    /* 1  SP_KOROMON      */ {ST_BABY,    0, SP_AGUMON,        0,  CH_VB_KORO,       "KOROMON",       "滚球兽"},
+    /* 2  SP_AGUMON       */ {ST_CHILD,   0, SP_GREYMON,       5,  CH_VB_AGU,        "AGUMON",        "亚古兽"},
+    /* 3  SP_GREYMON      */ {ST_TEEN,    0, SP_METALGREYMON, 10,  CH_VB_GREY,       "GREYMON",       "暴龙兽"},
+    /* 4  SP_METALGREYMON */ {ST_ADULT,   0, SP_WARGREYMON,   20,  CH_VB_METALGREY,  "METALGREYMON",  "机械暴龙兽"},
+    /* 5  SP_WARGREYMON   */ {ST_PERFECT, 0, SP_NONE,          0,  CH_VB_WARGREY,    "WARGREYMON",    "战斗暴龙兽"},
+    // ---- 线 1：V 仔兽 ----
+    /* 6  SP_CHIBIMON     */ {ST_BABY,    1, SP_VMON,          0,  CH_VB_CHIBI,      "CHIBIMON",      "芝比兽"},
+    /* 7  SP_VMON         */ {ST_CHILD,   1, SP_XVMON,         5,  CH_VB_V,          "V-MON",         "V仔兽"},
+    /* 8  SP_XVMON        */ {ST_TEEN,    1, SP_PAILDRAMON,   10,  CH_VB_XV,         "XV-MON",        "XV兽"},
+    /* 9  SP_PAILDRAMON   */ {ST_ADULT,   1, SP_IMPERIALDRAMON,20, CH_VB_PAILDRA,    "PAILDRAMON",    "机甲龙兽"},
+    /* 10 SP_IMPERIALDRAMON*/{ST_PERFECT, 1, SP_NONE,          0,  CH_VB_IMPERIAL,   "IMPERIALDRAMON","帝皇龙甲兽"},
+    // ---- 线 2：大耳兽 ----
+    /* 11 SP_GUMMYMON     */ {ST_BABY,    2, SP_TERRIERMON,    0,  CH_VB_GUMMY,      "GUMMYMON",      "软糖兽"},
+    /* 12 SP_TERRIERMON   */ {ST_CHILD,   2, SP_GALGOMON,      5,  CH_VB_TERRIER,    "TERRIERMON",    "大耳兽"},
+    /* 13 SP_GALGOMON     */ {ST_TEEN,    2, SP_RAPIDMON,     10,  CH_VB_GALGO,      "GALGOMON",      "加尔哥兽"},
+    /* 14 SP_RAPIDMON     */ {ST_ADULT,   2, SP_SAINTGALGOMON,20,  CH_VB_RAPID,      "RAPIDMON",      "拉比兽"},
+    /* 15 SP_SAINTGALGOMON*/ {ST_PERFECT, 2, SP_NONE,          0,  CH_VB_SAINTGALGO, "SAINT GALGOMON","撒多格杜兽"},
+    // ---- 线 3：巴达兽（无幼年期，直接成长期起步）----
+    /* 16 SP_PATAMON      */ {ST_CHILD,   3, SP_ANGEMON,       5,  CH_VB_PATA,       "PATAMON",       "巴达兽"},
+    /* 17 SP_ANGEMON      */ {ST_TEEN,    3, SP_HOLYANGEMON,  10,  CH_VB_ANGE,       "ANGEMON",       "天使兽"},
+    /* 18 SP_HOLYANGEMON  */ {ST_ADULT,   3, SP_SERAPHIMON,   20,  CH_VB_HOLYANGE,   "HOLYANGEMON",   "神圣天使兽"},
+    /* 19 SP_SERAPHIMON   */ {ST_PERFECT, 3, SP_NONE,          0,  CH_VB_SERAPHI,    "SERAPHIMON",    "炽天使兽"},
+    // ---- 线 4：迪路兽 ----
+    /* 20 SP_TAILMON      */ {ST_CHILD,   4, SP_NEFERTIMON,    5,  CH_VB_TAILMON,    "TAILMON",       "迪路兽"},
+    /* 21 SP_NEFERTIMON   */ {ST_TEEN,    4, SP_SILPHYMON,    10,  CH_VB_NEFERTI,    "NEFERTIMON",    "尼菲迪兽"},
+    /* 22 SP_SILPHYMON    */ {ST_ADULT,   4, SP_HOLYDRAMON,   20,  CH_VB_SILPHY,     "SILPHYMON",     "人面战鹰兽"},
+    /* 23 SP_HOLYDRAMON   */ {ST_PERFECT, 4, SP_NONE,          0,  CH_VB_HOLYDRA,    "HOLYDRAMON",    "圣龙兽"},
+};
+
+static inline const SpeciesRow& sp_row(uint8_t sp) {
+    return (sp < SP_COUNT) ? SP_TBL[sp] : SP_TBL[0];
 }
 
-const char* pet_species_name_cn(uint8_t species) {
-    switch (species) {
-        case SP_EGG:           return "数码蛋";
-        case SP_KOROMON:       return "滚球兽";
-        case SP_AGUMON:        return "亚古兽";
-        case SP_GREYMON:       return "暴龙兽";
-        case SP_METALGREYMON:  return "机械暴龙兽";
-        case SP_WARGREYMON:    return "战斗暴龙兽";
-        default:               return "未知";
-    }
+uint8_t pet_species_stage(uint8_t sp)  { return sp_row(sp).stage; }
+uint8_t pet_species_next(uint8_t sp)   { return sp_row(sp).next; }
+uint8_t pet_species_wins(uint8_t sp)   { return sp_row(sp).wins; }
+uint8_t pet_species_char(uint8_t sp)   { return sp_row(sp).ch; }
+uint8_t pet_species_line(uint8_t sp)   { return sp_row(sp).line; }
+
+uint8_t pet_line_count() { return 5; }
+
+uint8_t pet_line_first(uint8_t line) {
+    for (uint8_t i = 1; i < SP_COUNT; i++)
+        if (SP_TBL[i].line == line) return i;
+    return SP_KOROMON;
 }
+
+uint8_t pet_line_len(uint8_t line) {
+    uint8_t n = 0;
+    for (uint8_t i = 1; i < SP_COUNT; i++) if (SP_TBL[i].line == line) n++;
+    return n;
+}
+
+// 同线随机回退到更低阶段（含 stage 下限）
+uint8_t pet_devolve_target(uint8_t sp, uint8_t min_stage) {
+    const uint8_t line = sp_row(sp).line;
+    const uint8_t cur  = sp_row(sp).stage;
+    uint8_t pool[8], n = 0;
+    for (uint8_t i = 1; i < SP_COUNT && n < 8; i++) {
+        if (SP_TBL[i].line != line) continue;
+        if (SP_TBL[i].stage >= cur || SP_TBL[i].stage < min_stage) continue;
+        pool[n++] = i;
+    }
+    return n ? pool[random(0, n)] : 0xFF;
+}
+
+const char* pet_species_name(uint8_t species)    { return sp_row(species).name; }
+const char* pet_species_name_cn(uint8_t species) { return sp_row(species).name_cn; }
 
 uint8_t pet_sprite_id(const PetState& p) {
     if (p.stage == ST_DEAD) return SPR_ID_DEAD;
@@ -125,7 +186,7 @@ uint8_t pet_sprite_id(const PetState& p) {
         case SP_GREYMON:       return SPR_ID_GREYMON;
         case SP_METALGREYMON:  return SPR_ID_METALGREYMON;
         case SP_WARGREYMON:    return SPR_ID_WARGREYMON;
-        default:               return SPR_ID_EGG;
+        default:               return SPR_ID_EGG;   // 新线走动画，静态图只兜底
     }
 }
 
@@ -192,12 +253,13 @@ void pet_new(PetState& p, uint32_t now) {
 // 随机退化：掉到当前阶段以下的任意阶段（最低幼年期，不回蛋）
 static void devolve(PetState& p, uint32_t now) {
     if (p.stage <= ST_BABY) return;
-    uint8_t lo = ST_BABY;
-    uint8_t hi = (uint8_t)(p.stage - 1);
-    uint8_t ns = (uint8_t)(lo + random(hi - lo + 1));
+    // 退化只在同一条进化线内回退（D-3 规则：不会串线）
+    const uint8_t target = pet_devolve_target(p.species, ST_BABY);
+    if (target == SP_NONE) return;
 
+    const uint8_t ns = pet_species_stage(target);
     p.stage = ns;
-    p.species = ns;                 // 阶段 1..5 与种族编号一一对应
+    p.species = target;
     p.stage_start = now;
     p.evolve_at = now + stage_duration(ns);
     p.wins = 0;                     // 退化后重新攒胜场
@@ -327,29 +389,12 @@ static void fire_event(PetState& p, uint32_t now) {
 }
 
 // ---------------------------------------------------------------- 进化 ----
-static bool try_evolve(PetState& p, uint32_t now) {
-    if (now < p.evolve_at) return false;             // 时间闸门没开
-    if (p.wins < pet_wins_needed(p.stage)) return false;
+// 应用一次形态切换（含阶段/数值/计时）
+static void apply_form(PetState& p, uint8_t sp, uint32_t now) {
+    const uint8_t next_stage = pet_species_stage(sp);
 
-    uint8_t next_stage = ST_DEAD;
-    uint8_t next_species = SP_EGG;
-
-    switch (p.stage) {
-        case ST_EGG:   next_stage = ST_BABY;  next_species = SP_KOROMON;      break;
-        case ST_BABY:  next_stage = ST_CHILD; next_species = SP_AGUMON;       break;
-        case ST_CHILD: next_stage = ST_TEEN;  next_species = SP_GREYMON;      break;
-        case ST_TEEN:  next_stage = ST_ADULT; next_species = SP_METALGREYMON; break;
-        case ST_ADULT:
-            if (!(p.items & ITEM_CARD_COURAGE)) return false;   // 究极体硬门槛
-            next_stage = ST_PERFECT;
-            next_species = SP_WARGREYMON;
-            break;
-        default:
-            return false;
-    }
-
+    p.species = sp;
     p.stage = next_stage;
-    p.species = next_species;
     p.stage_start = now;
     p.evolve_at = now + stage_duration(next_stage);
     p.pending = PEND_NONE;
@@ -363,7 +408,31 @@ static bool try_evolve(PetState& p, uint32_t now) {
         case ST_PERFECT: p.atk += 15; p.def += 12; break;
         default: break;
     }
-    p.hp = clamp16(p.hp + 20, 0, 100);
+    p.atk  = clamp16(p.atk, 1, 99);
+    p.def  = clamp16(p.def, 1, 99);
+    p.hp   = clamp16(p.hp + 20, 0, 100);
+}
+
+static bool try_evolve(PetState& p, uint32_t now) {
+    if (now < p.evolve_at) return false;             // 时间闸门
+
+    // 蛋：随机挑一条线开始（多线养成）
+    if (p.stage == ST_EGG) {
+        const uint8_t line = (uint8_t)random(0, pet_line_count());
+        apply_form(p, pet_line_first(line), now);
+        log_ev(EV_HATCH, now);
+        log_ev(EV_EVOLVE, now);
+        return true;
+    }
+
+    const uint8_t next = pet_species_next(p.species);
+    if (next == SP_NONE) return false;
+    if (p.wins < pet_species_wins(p.species)) return false;          // 胜场门槛（D-3 规则）
+
+    const uint8_t next_stage = pet_species_stage(next);
+    if (next_stage == ST_PERFECT && !(p.items & ITEM_CARD_COURAGE)) return false;  // 究极体硬门槛
+
+    apply_form(p, next, now);
     log_ev(EV_EVOLVE, now);
     return true;
 }
@@ -508,13 +577,16 @@ bool pet_action(PetState& p, uint32_t now, const char* cmd, char* msg, size_t n)
         uint8_t  saved_stage = p.stage, saved_species = p.species;
         uint16_t saved_atk = p.atk, saved_def = p.def;
         if ((p.items & ITEM_BATTLE) && p.stage < ST_PERFECT) {
-            p.items &= ~((uint32_t)ITEM_BATTLE);
-            card = 1;
-            p.stage = (uint8_t)(p.stage + 1);
-            p.species = p.stage;
-            p.atk = clamp16((int)p.atk + 8, 1, 99);
-            p.def = clamp16((int)p.def + 6, 1, 99);
-            log_ev(EV_CARD, now);
+            const uint8_t nxt = pet_species_next(p.species);
+            if (nxt != SP_NONE) {                 // 同线临时进化一级参战
+                p.items &= ~((uint32_t)ITEM_BATTLE);
+                card = 1;
+                p.species = nxt;
+                p.stage = pet_species_stage(nxt);
+                p.atk = clamp16((int)p.atk + 8, 1, 99);
+                p.def = clamp16((int)p.def + 6, 1, 99);
+                log_ev(EV_CARD, now);
+            }
         }
         uint16_t hp_before = p.hp;
         uint8_t  form = p.species;
@@ -620,7 +692,7 @@ bool pet_action(PetState& p, uint32_t now, const char* cmd, char* msg, size_t n)
     if (!strcmp(cmd, "evolve")) {              // 调试：立即结算
         if (try_evolve(p, now)) { copy_msg(msg, n, "EVOLVED!"); return true; }
         if (now < p.evolve_at) { copy_msg(msg, n, "TOO EARLY"); return false; }
-        if (p.wins < pet_wins_needed(p.stage)) { copy_msg(msg, n, "NEED WINS"); return false; }
+        if (p.wins < pet_species_wins(p.species)) { copy_msg(msg, n, "NEED WINS"); return false; }
         copy_msg(msg, n, "NEED CARD");
         return false;
     }
@@ -674,7 +746,7 @@ bool pet_apply_card(PetState& p, uint32_t now, const char* id, char* msg, size_t
         if (p.alive) { copy_msg(msg, n, "NO NEED"); return false; }
         p.alive = 1;
         p.stage = ST_BABY;
-        p.species = SP_KOROMON;
+        p.species = SP_EGG;
         p.stage_start = now;
         p.evolve_at = now + stage_duration(ST_BABY);
         p.last_settle = now;
