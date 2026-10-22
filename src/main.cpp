@@ -55,7 +55,7 @@ void setup() {
     cfg.gpio.e = 18;
     cfg.clkphase = false;
     cfg.latch_blanking = PANEL_LATCH_BLANK;
-    cfg.double_buff = true;      // 双缓冲：避免绘制撕裂/屏闪（ui 每帧 flipDMABuffer）
+    cfg.double_buff = false;     // 单缓冲：双缓冲翻页会忙等 EOF 并重连 DMA，15fps 下反而闪
 
     g_matrix = new MatrixPanel_I2S_DMA(cfg);
     if (!g_matrix->begin()) {
