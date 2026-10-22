@@ -208,12 +208,27 @@ void battle_render(uint32_t ms) {
         ? collapse_frame(mine ? s_me_hurt : s_en_hurt)
         : frame_at(clip, t, ph.dur);
 
+    // ---- 攻击动作：后仰 -> 前冲 -> 收回 ----
+    int16_t off = 0;
+    if (ph.act == ACT_ATTACK) {
+        const uint32_t d = ph.dur ? ph.dur : 300u;
+        const uint32_t p1 = d * 3u / 10u;        // 蓄力
+        const uint32_t p2 = d * 7u / 10u;        // 突进
+        if (t < p1)       off = (int16_t)(-4 * (int32_t)t / (int32_t)p1);              // 后仰
+        else if (t < p2)  off = (int16_t)(-4 + 14 * (int32_t)(t - p1) / (int32_t)(p2 - p1)); // 冲出
+        else              off = (int16_t)(10 - 10 * (int32_t)(t - p2) / (int32_t)(d - p2 + 1)); // 收回
+    }
+    // ---- 受击抖动 ----
+    if (ph.act == ACT_HURT && t < 260u) {
+        off += (int16_t)(((t / 45u) & 1u) ? 2 : -2);
+    }
+
     if (f) {
         if (ph.act == ACT_HURT && t < 140) {
-            screen_sprite_flash(f, 32, 29, 200);
+            screen_sprite_flash(f, (int16_t)(32 + off), 29, 200);
         } else {
             uint8_t dim = (!mine && s_en != CH_JOKER) ? 215 : 255;
-            screen_sprite(f, 32, 29, dim);
+            screen_sprite(f, (int16_t)(32 + off), 29, dim);
         }
     }
 
