@@ -9,12 +9,14 @@
 #include "panel.h"
 #include "game/pet.h"
 #include "ui/battle.h"
+#include "panel_rot.h"
 #include "game/save.h"
 #include "game/clock.h"
 #include "ui/ui.h"
 #include "net/net.h"
 
 MatrixPanel_I2S_DMA* g_matrix = nullptr;
+uint8_t g_rot_dir = 0;   // 0=顺时针90
 PetState g_pet;
 
 static uint32_t s_last_draw = 0;
@@ -57,11 +59,11 @@ void setup() {
     cfg.latch_blanking = PANEL_LATCH_BLANK;
     cfg.double_buff = false;     // 单缓冲：双缓冲翻页会忙等 EOF 并重连 DMA，15fps 下反而闪
 
-    g_matrix = new MatrixPanel_I2S_DMA(cfg);
+    g_matrix = new RotPanel(cfg);
     if (!g_matrix->begin()) {
         Serial.println("[panel] begin() FAILED — 检查接线/供电");
     }
-    g_matrix->setRotation(3);
+
     g_matrix->setBrightness8(PANEL_BRIGHTNESS);
     g_matrix->fillScreen(0);
     Serial.printf("[panel] %dx%d depth=%d refresh=%dHz freeheap=%u\n",

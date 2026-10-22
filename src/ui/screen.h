@@ -13,6 +13,7 @@ void screen_clouds(uint32_t now_ms, uint8_t scene);
 void screen_sprite(const SpriteDef* spr, int16_t cx, int16_t cy, uint8_t dim);
 void screen_sprite_flash(const SpriteDef* spr, int16_t cx, int16_t cy, uint8_t level);
 void screen_forget_sprite();                          // 切场景后调用
+void screen_invalidate();                             // 强制整屏重建
 
 // HUD 直接画在面板上（不参与底图）
 void screen_text_at(const char* s, int16_t x, int16_t y, uint16_t color);

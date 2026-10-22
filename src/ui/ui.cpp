@@ -69,6 +69,12 @@ static void draw_clock() {
     screen_text_at(buf, 1, 56, C_CYAN);
 }
 
+void ui_invalidate() {
+    screen_invalidate();
+    s_top_key = 0xFFFF;
+    s_bot_key = 0xFFFFFFFF;
+}
+
 void ui_set_brightness(uint8_t v) {
     s_brightness = v;
     if (g_matrix) g_matrix->setBrightness8(v);

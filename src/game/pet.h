@@ -67,6 +67,18 @@ struct PetState {
     uint8_t  crc;
 };
 
+// ---------------------------------------------------------------- 战斗 ----
+// 力量比命中 + 伤害交换（DM 系列的 P/(P+E) 模型）
+#define BATTLE_HP             24
+#define BATTLE_MAX_EXCHANGES  40
+#define BATTLE_MAX_EX         80
+
+struct BattleExchange {
+    uint8_t by_player;     // 1=我方出手
+    uint8_t hit;           // 1=命中
+    uint8_t dmg;
+};
+
 // 最近一场战斗的结果（战斗演出用）
 struct BattleOutcome {
     uint8_t  win;          // 1=赢
@@ -74,8 +86,12 @@ struct BattleOutcome {
     uint8_t  my_species;   // 参战形态（进化后的）
     uint16_t hp_before;
     uint16_t hp_after;
+    uint8_t  enemy_hp;     // 敌方剩余 HP（0..BATTLE_HP）
+    uint8_t  exchanges;    // 交换次数
 };
-extern BattleOutcome g_battle_out;     // 打完由 UI 读取
+extern BattleOutcome   g_battle_out;                 // 打完由 UI 读取
+extern BattleExchange  g_battle_ex[BATTLE_MAX_EX];   // 交换明细（可回放）
+extern uint8_t         g_battle_ex_n;
 
 const char* pet_stage_name(uint8_t stage);
 const char* pet_stage_name_cn(uint8_t stage);

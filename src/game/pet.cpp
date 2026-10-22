@@ -33,7 +33,9 @@ static uint32_t rr(uint32_t lo, uint32_t hi) {
 // ---------------------------------------------------------------- 事件日志 ----
 struct EvRec { uint32_t t; uint8_t k; };
 static EvRec  s_log[16];
-BattleOutcome g_battle_out = {0, 0, 0, 0, 0};
+BattleOutcome  g_battle_out = {0, 0, 0, 0, 0, 0, 0};
+BattleExchange g_battle_ex[BATTLE_MAX_EX];
+uint8_t        g_battle_ex_n = 0;
 static uint8_t s_head = 0, s_count = 0;
 
 static void log_ev(uint8_t k, uint32_t now) {
@@ -517,24 +519,63 @@ bool pet_action(PetState& p, uint32_t now, const char* cmd, char* msg, size_t n)
         uint16_t hp_before = p.hp;
         uint8_t  form = p.species;
 
-        // 对手强度以自身攻防为基准（同水平），胜率约 50%；遭遇战 +4。
-        // 早期不会因为 atk 低就必输，避免被「1 胜」门槛拖成几十天。
-        int base  = p.atk * 2 + p.def;
-        int power = base + (int)random(-6, 7) + (ambush ? 4 : 0);
-        int enemy = base + (int)random(-10, 12);
-        bool win = power >= enemy;
+        // ---- 战斗：力量比命中 + 伤害交换（照 DM 系列的 P/(P+E) 模型自实现）----
+        // 命中率 = P*100/(P+E)，双方对称；每回合我方先手，最多 40 次交换。
+        int P = p.atk * 2 + p.def;
+        int E = P + (ambush ? 16 : 0) + (int)random(-14, 15);
+        if (E < 8) E = 8;
+        uint8_t hit  = (uint8_t)((uint32_t)P * 100u / (uint32_t)(P + E));
+        uint8_t ehit = (uint8_t)(100 - hit);
 
+        uint8_t hp_me = BATTLE_HP, hp_en = BATTLE_HP;
+        bool win = false, lose = false;
+        g_battle_ex_n = 0;
+
+        for (int i = 0; i < BATTLE_MAX_EXCHANGES; i++) {
+            bool h1 = (int)random(0, 100) < hit;
+            uint8_t d1 = 0;
+            if (h1) {
+                d1 = (uint8_t)(3 + random(0, 5));          // 3..7
+                if (p.mood >= 80) d1++;                     // 心情好吃得开
+                hp_en = (uint8_t)((hp_en > d1) ? (hp_en - d1) : 0);
+            }
+            if (g_battle_ex_n < BATTLE_MAX_EX) {
+                g_battle_ex[g_battle_ex_n].by_player = 1;
+                g_battle_ex[g_battle_ex_n].hit = h1 ? 1 : 0;
+                g_battle_ex[g_battle_ex_n].dmg = d1;
+                g_battle_ex_n++;
+            }
+            if (hp_en == 0) { win = true; break; }
+
+            bool h2 = (int)random(0, 100) < ehit;
+            uint8_t d2 = 0;
+            if (h2) {
+                d2 = (uint8_t)(3 + random(0, 5));
+                hp_me = (uint8_t)((hp_me > d2) ? (hp_me - d2) : 0);
+            }
+            if (g_battle_ex_n < BATTLE_MAX_EX) {
+                g_battle_ex[g_battle_ex_n].by_player = 0;
+                g_battle_ex[g_battle_ex_n].hit = h2 ? 1 : 0;
+                g_battle_ex[g_battle_ex_n].dmg = d2;
+                g_battle_ex_n++;
+            }
+            if (hp_me == 0) { lose = true; break; }
+        }
+        if (!win && !lose) win = (hp_en <= hp_me);          // 打满 40 回合按剩血判
+
+        // 战斗槽位血量换算成宠物 HP（最多掉 45）
+        int hp_loss = (int)(BATTLE_HP - hp_me) * 45 / BATTLE_HP;
         if (win) {
             p.wins++;
             p.mood = clamp16((int)p.mood + 10, 0, 100);
             p.atk = clamp16((int)p.atk + 1, 1, 99);
-            p.hp = clamp16((int)p.hp - (int)random(4, 10), 0, 100);
+            p.hp = clamp16((int)p.hp - hp_loss, 0, 100);
             log_ev(EV_WIN, now);
             copy_msg(msg, n, ambush ? "AMBUSH WIN!" : "YOU WIN!");
         } else {
             p.losses++;
             p.mood = clamp16((int)p.mood - 8, 0, 100);
-            p.hp = clamp16((int)p.hp - (int)random(10, 18), 0, 100);
+            p.hp = clamp16((int)p.hp - hp_loss, 0, 100);
             p.mistakes++;
             log_ev(EV_LOSE, now);
             copy_msg(msg, n, "YOU LOSE..");
@@ -553,6 +594,8 @@ bool pet_action(PetState& p, uint32_t now, const char* cmd, char* msg, size_t n)
         g_battle_out.my_species = form;
         g_battle_out.hp_before = hp_before;
         g_battle_out.hp_after = p.hp;
+        g_battle_out.enemy_hp = hp_en;
+        g_battle_out.exchanges = g_battle_ex_n;
         return true;
     }
 

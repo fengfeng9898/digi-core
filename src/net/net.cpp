@@ -7,6 +7,7 @@
 #include "../game/pet.h"
 #include "../gfx/anim.h"
 #include "../ui/battle.h"
+#include "../panel.h"
 #include <WiFi.h>
 #include <WebServer.h>
 #include <ESPmDNS.h>
@@ -108,6 +109,17 @@ static void handle_card() {
     if (changed) save_store(*s_pet);
     if (msg[0]) ui_toast(msg);
     s_server.send(200, "application/json", reply_json(changed, msg));
+}
+
+// 画面方向：/api/rot?d=cw|ccw
+static void handle_rot() {
+    String d = s_server.arg("d");
+    if (d == "ccw") g_rot_dir = 1;
+    else if (d == "cw") g_rot_dir = 0;
+    ui_invalidate();
+    char body[48];
+    snprintf(body, sizeof(body), "{\"ok\":1,\"dir\":%u}", (unsigned)g_rot_dir);
+    s_server.send(200, "application/json", body);
 }
 
 static void handle_bright() {
@@ -218,6 +230,7 @@ void net_begin(PetState* pet) {
     s_server.on("/api/card", handle_card);
     s_server.on("/api/bright", handle_bright);
     s_server.on("/api/warp", handle_warp);
+    s_server.on("/api/rot", handle_rot);
     s_server.on("/api/wifi", HTTP_POST, handle_wifi_save);
     s_server.on("/api/wifi/clear", HTTP_POST, handle_wifi_clear);
     s_server.onNotFound(handle_notfound);

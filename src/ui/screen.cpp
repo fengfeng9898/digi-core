@@ -90,6 +90,8 @@ void screen_clear() {
 
 void screen_forget_sprite() { s_prev = nullptr; }
 
+void screen_invalidate() { s_scene = 0xFF; s_prev = nullptr; }
+
 void screen_scene(uint8_t idx) {
     if (idx == s_scene) return;
     s_scene = idx;

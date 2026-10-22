@@ -30,6 +30,8 @@ static const AnimClip *s_me_idle, *s_me_atk, *s_me_hurt, *s_me_win;
 static const AnimClip *s_en_idle, *s_en_atk, *s_en_hurt, *s_en_win;
 static uint8_t  s_win = 0, s_card = 0;
 static uint16_t s_hp_before = 100, s_hp_after = 100;
+static uint8_t  s_enemy_hp = BATTLE_HP;
+static uint8_t  s_exchanges = 0;
 
 static uint32_t clip_total(const AnimClip* c) {
     if (!c) return 0;
@@ -106,6 +108,8 @@ void battle_start(const BattleOutcome& out, uint32_t now_ms) {
     s_card = out.card;
     s_hp_before = out.hp_before;
     s_hp_after = out.hp_after;
+    s_enemy_hp = out.enemy_hp;
+    s_exchanges = out.exchanges;
 
     s_n = 0;
     s_pi = 0;
@@ -175,10 +179,11 @@ void battle_render(uint32_t ms) {
 
         uint16_t my_hp = hurt_late ? s_hp_after : s_hp_before;
         uint16_t en_hp = 100;
-        if (!strcmp(ph.name, "HIT!")) en_hp = 40;
+        const uint16_t en_end = (uint16_t)(s_enemy_hp * 100u / BATTLE_HP);
+        if (!strcmp(ph.name, "HIT!")) en_hp = en_end;
         else if (!strcmp(ph.name, "KO!") || !strcmp(ph.name, "YOU WIN!")) en_hp = 0;
         else if (s_win && !strcmp(ph.name, "WINNER!")) en_hp = 0;
-        else if (!s_win && (!strcmp(ph.name, "ENEMY!") || hurt_late)) en_hp = 40;
+        else if (!s_win && (!strcmp(ph.name, "ENEMY!") || hurt_late)) en_hp = en_end;
 
         screen_clear_band(0, 7);
         hp_bar(1, 1, 30, my_hp, 0x07E0);
