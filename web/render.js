@@ -225,6 +225,32 @@
         }
       }
     }
+
+    // 满屏单角色绘制（战斗切镜用）：tint 压暗敌方，flash 受击闪白
+    drawFrame(rows, pal, y0, tint, flash) {
+      const cols = new Array(16);
+      for (let i = 0; i < 16; i++) {
+        let r = ((pal[i] >> 11) & 0x1F) * 255 / 31 | 0;
+        let g = ((pal[i] >> 5) & 0x3F) * 255 / 63 | 0;
+        let b = (pal[i] & 0x1F) * 255 / 31 | 0;
+        if (tint) { r = r * tint[0] | 0; g = g * tint[1] | 0; b = b * tint[2] | 0; }
+        if (flash) {
+          r = Math.min(255, r + (255 - r) * flash) | 0;
+          g = Math.min(255, g + (255 - g) * flash) | 0;
+          b = Math.min(255, b + (255 - b) * flash) | 0;
+        }
+        cols[i] = `rgb(${r},${g},${b})`;
+      }
+      for (let y = 0; y < rows.length; y++) {
+        const row = rows[y];
+        for (let x = 0; x < row.length; x++) {
+          const idx = parseInt(row[x], 16);
+          if (!idx) continue;
+          this.ctx.fillStyle = cols[idx];
+          this.ctx.fillRect(x, y0 + y, 1, 1);
+        }
+      }
+    }
   }
 
   root.DigiRenderer = Renderer;

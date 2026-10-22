@@ -1,32 +1,13 @@
-// 战斗场景：敌方登场 -> 我方攻击命中 -> 胜利 / 敌方反击 -> 我方受伤
-// 关键点：攻击动画必须有交互对象，胜利/受伤是对战结果，不是随机播放。
+// 回合制战斗演出（切镜版）
+//   我方攻击(单) -> 敌方受伤(单) -> 敌方攻击(单) -> 我方受伤(单) -> 胜利/失败
+// 每个镜头只有一个角色占满屏，不再左右分屏。
 (function (root) {
   'use strict';
 
-  function rgb565(c) {
-    const r = ((c >> 11) & 0x1F) * 255 / 31 | 0;
-    const g = ((c >> 5) & 0x3F) * 255 / 63 | 0;
-    const b = (c & 0x1F) * 255 / 31 | 0;
-    return [r, g, b];
-  }
+  const FULL_Y = 9;        // 64x40 动画帧的绘制起点（与主界面一致）
 
-  function bbox(frames) {
-    let x0 = 1e9, y0 = 1e9, x1 = -1, y1 = -1;
-    for (const rows of frames) {
-      for (let y = 0; y < rows.length; y++) {
-        const row = rows[y];
-        for (let x = 0; x < row.length; x++) {
-          if (row[x] !== '0') {
-            if (x < x0) x0 = x;
-            if (y < y0) y0 = y;
-            if (x > x1) x1 = x;
-            if (y > y1) y1 = y;
-          }
-        }
-      }
-    }
-    if (x1 < 0) return { x: 0, y: 0, w: 0, h: 0 };
-    return { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
+  function clipTotal(clip) {
+    return clip.dur.reduce((a, b) => a + b, 0);
   }
 
   class BattleScene {
@@ -34,28 +15,16 @@
       this.data = data;
       this.r = renderer;
       this.active = false;
-      this.t0 = 0;
-      this.phases = [];
-      this.pi = 0;
-      this.bboxCache = {};
-    }
-
-    charBox(key) {
-      if (!this.bboxCache[key]) {
-        const c = this.data.chars[key];
-        this.bboxCache[key] = bbox(c.anims.idle.frames);
-      }
-      return this.bboxCache[key];
     }
 
     enemyName(key) {
       return { koromon: 'KOROMON', agumon: 'AGUMON', greymon: 'GREYMON' }[key] || 'WILD';
     }
 
-    // opts: { win, myChar, enemyChar, hpBefore, hpAfter }
     start(opts, nowMs) {
-      const clipDur = (clip) => clip.dur.reduce((a, b) => a + b, 0);
-      const c = this.data.chars[opts.myChar];
+      const me = this.data.chars[opts.myChar];
+      const en = this.data.chars[opts.enemyChar];
+      const cap = (c, ms) => Math.min(ms, clipTotal(c));
 
       this.active = true;
       this.t0 = nowMs;
@@ -68,144 +37,144 @@
       this.hpAfter = opts.hpAfter;
       this.enemyHp = 100;
 
-      const atkDur = clipDur(c.anims.attack);
-      const winDur = clipDur(c.anims.win);
-      const hurtDur = clipDur(c.anims.hurt);
-
       this.phases = [
-        { name: 'intro', dur: 650 },
-        { name: 'attack', dur: atkDur },
+        { name: 'intro', dur: 450, shot: 'enemy' },
+        { name: 'myAttack', dur: cap(me.anims.attack, 1400), shot: 'me' },
+        { name: 'enemyHurt', dur: cap(en.anims.hurt, 1000), shot: 'enemy' }
       ];
       if (opts.win) {
-        this.phases.push({ name: 'down', dur: 420 });
-        this.phases.push({ name: 'win', dur: winDur });
-        this.phases.push({ name: 'end', dur: 450, last: true });
+        this.phases.push({ name: 'enemyDown', dur: 420, shot: 'enemy' });
+        this.phases.push({ name: 'myWin', dur: cap(me.anims.win, 1500), shot: 'me' });
+        this.phases.push({ name: 'end', dur: 500, shot: 'me' });
       } else {
-        this.phases.push({ name: 'counter', dur: 380 });
-        this.phases.push({ name: 'hurt', dur: hurtDur });
-        this.phases.push({ name: 'end', dur: 500, last: true });
+        this.phases.push({ name: 'enemyAttack', dur: cap(en.anims.attack, 1300), shot: 'enemy' });
+        this.phases.push({ name: 'myHurt', dur: cap(me.anims.hurt, 1200), shot: 'me' });
+        this.phases.push({ name: 'end', dur: 550, shot: 'me' });
       }
     }
 
-    // 取动画在相对时间 t 处的帧
-    frameAt(clip, t) {
+    // 受伤动画里「倒下那一下」大约在 55% 处；用它做定格，避免停到恢复站起帧
+    collapseFrame(clip) {
+      return this.atTime(clip, clipTotal(clip) * 0.55);
+    }
+
+    atTime(clip, tt) {
       let acc = 0;
       for (let i = 0; i < clip.frames.length; i++) {
         acc += clip.dur[i] || 100;
-        if (t < acc) return clip.frames[i];
+        if (tt < acc) return clip.frames[i];
       }
       return clip.frames[clip.frames.length - 1];
     }
 
-    // 按包围盒等比缩放绘制；mirror 用于敌方朝向
-    blit(ctx, rows, pal, box, destCx, destBaseY, scale, mirror, tint, flash) {
-      if (!box.w || !box.h) return;
-      const dw = Math.max(1, Math.round(box.w * scale));
-      const dh = Math.max(1, Math.round(box.h * scale));
-      const ox = Math.round(destCx - dw / 2);
-      const oy = Math.round(destBaseY - dh);
-
-      for (let dy = 0; dy < dh; dy++) {
-        const sy = box.y + Math.min(box.h - 1, Math.floor(dy / scale));
-        const row = rows[sy];
-        if (!row) continue;
-        for (let dx = 0; dx < dw; dx++) {
-          const sxLocal = Math.min(box.w - 1, Math.floor(dx / scale));
-          const sx = box.x + (mirror ? (box.w - 1 - sxLocal) : sxLocal);
-          const idx = parseInt(row[sx], 16);
-          if (!idx) continue;
-          let [r, g, b] = rgb565(pal[idx]);
-          if (tint) { r = r * tint[0] | 0; g = g * tint[1] | 0; b = b * tint[2] | 0; }
-          if (flash) {
-            r = Math.min(255, r + (255 - r) * flash);
-            g = Math.min(255, g + (255 - g) * flash);
-            b = Math.min(255, b + (255 - b) * flash);
-          }
-          ctx.fillStyle = `rgb(${r | 0},${g | 0},${b | 0})`;
-          ctx.fillRect(ox + dx, oy + dy, 1, 1);
-        }
+    // 把镜头时间映射到动画帧（超出 cap 就停在最后一帧）
+    frameAt(clip, t, cap) {
+      const total = clipTotal(clip);
+      const tt = Math.max(0, Math.min(total - 1, t * total / Math.max(1, cap)));
+      let acc = 0;
+      for (let i = 0; i < clip.frames.length; i++) {
+        acc += clip.dur[i] || 100;
+        if (tt < acc) return clip.frames[i];
       }
-      return { x: ox, y: oy, w: dw, h: dh };
+      return clip.frames[clip.frames.length - 1];
     }
 
-    draw(ctx, nowMs) {
+    draw(ctx, nowMs, nowSec) {
       if (!this.active) return;
       const el = nowMs - this.t0;
 
-      // 阶段推进
       while (this.pi < this.phases.length) {
         const p = this.phases[this.pi];
-        const start = this.phaseStart || 0;
-        if (el - start < p.dur) break;
-        this.phaseStart = start + p.dur;
+        if (el - this.phaseStart < p.dur) break;
+        this.phaseStart += p.dur;
         this.pi++;
       }
       if (this.pi >= this.phases.length) { this.active = false; return; }
 
       const phase = this.phases[this.pi];
-      const t = el - (this.phaseStart || 0);
+      const t = el - this.phaseStart;
       const me = this.data.chars[this.myChar];
       const en = this.data.chars[this.enemyChar];
-      const myBox = this.charBox(this.myChar);
-      const enBox = this.charBox(this.enemyChar);
 
-      // 背景：和主界面同一套（白天/黑夜 + 云），顶部 8px 留给血条
+      // ---- 背景 + 顶部黑条 ----
       ctx.fillStyle = '#000';
       ctx.fillRect(0, 0, 64, 8);
-      if (this.r && this.r.bg) this.r.bg.draw(ctx, this.r.nowSec || 0, this.r.sceneMode || 'auto');
+      if (this.r && this.r.bg) this.r.bg.draw(ctx, nowSec || 0, this.r.sceneMode || 'auto');
       else ctx.fillRect(0, 8, 64, 56);
 
       // ---- 血条 ----
-      const myHp = (phase.name === 'hurt' || phase.name === 'end') ? this.hpAfter : this.hpBefore;
+      const hurtDone = (phase.name === 'myHurt' || phase.name === 'end');
+      const myHp = hurtDone ? this.hpAfter : this.hpBefore;
       let enemyHp = 100;
-      if (phase.name === 'attack') enemyHp = t > phase.dur * 0.62 ? (this.win ? 0 : 18) : 100;
-      if (phase.name === 'down' || phase.name === 'win' || (phase.name === 'end' && this.win)) enemyHp = 0;
-      if (phase.name === 'counter' || phase.name === 'hurt' || (phase.name === 'end' && !this.win)) {
-        enemyHp = 18;
-      }
+      if (phase.name === 'enemyHurt') enemyHp = 40;
+      if (phase.name === 'enemyDown' || phase.name === 'myWin') enemyHp = 0;
+      if (phase.name === 'enemyAttack' || phase.name === 'myHurt' || phase.name === 'end') enemyHp = 40;
+      if (this.win && phase.name === 'end') enemyHp = 0;
 
       this.hpBar(ctx, 1, 1, 30, myHp, '#3fb950');
       this.hpBar(ctx, 33, 1, 30, enemyHp, '#f85149');
 
-      // ---- 我方 ----
-      let myRows = me.anims.idle.frames[0];
-      if (phase.name === 'attack') myRows = this.frameAt(me.anims.attack, t);
-      else if (phase.name === 'win') myRows = this.frameAt(me.anims.win, t);
-      else if (phase.name === 'hurt') myRows = this.frameAt(me.anims.hurt, t);
-      else myRows = this.frameAt(me.anims.idle, t);
+      // ---- 镜头 ----
+      const shot = phase.shot;
+      const who = shot === 'me' ? me : en;
 
-      // 失败时最后一击要闪红
-      const myFlash = (phase.name === 'counter' && t > phase.dur * 0.6) ? 0.75 : 0;
-      const myTint = myFlash ? null : null;
-      this.blit(ctx, myRows, me.pal, myBox, 22, 52, 0.80, false, myTint, myFlash);
-
-      // ---- 敌方 ----
-      let enRows = this.frameAt(en.anims.idle, t + 200);
-      // 进场：从右侧滑入
-      let slide = 0;
-      if (phase.name === 'intro') {
-        const k = Math.min(1, t / phase.dur);
-        slide = Math.round((1 - k) * 46);
+      let frame = null;
+      let flash = 0;
+      switch (phase.name) {
+        case 'intro':       frame = this.frameAt(en.anims.idle, t, phase.dur); break;
+        case 'myAttack':    frame = this.frameAt(me.anims.attack, t, phase.dur); break;
+        case 'enemyHurt':   frame = this.frameAt(en.anims.hurt, t, phase.dur);
+                            flash = t < 140 ? 0.85 : 0; break;
+        case 'enemyDown':   frame = this.collapseFrame(en.anims.hurt); break;
+        case 'myWin':       frame = this.frameAt(me.anims.win, t, phase.dur); break;
+        case 'enemyAttack': frame = this.frameAt(en.anims.attack, t, phase.dur); break;
+        case 'myHurt':      frame = this.frameAt(me.anims.hurt, t, phase.dur);
+                            flash = t < 140 ? 0.8 : 0; break;
+        case 'end':         frame = this.win ? this.collapseFrame(me.anims.win)
+                                             : this.collapseFrame(me.anims.hurt); break;
+        default: break;
       }
-      const enFlash = (phase.name === 'attack' && t > phase.dur * 0.62) ? 0.85 : 0;
-      const enFade = (phase.name === 'down') ? Math.max(0, 1 - t / phase.dur) : 1;
-      const lunge = (phase.name === 'counter' && t < phase.dur * 0.55) ? -7 : 0;
-      const enTint = [0.62, 0.42, 0.55];
-      const hideEnemy = (this.win && (phase.name === 'end'));
-      if (!hideEnemy) this.blit(ctx, enRows, en.pal, enBox, 48 + slide + lunge, 53, 0.68, true,
-        enFade >= 1 ? enTint : [enTint[0] * enFade, enTint[1] * enFade, enTint[2] * enFade], enFlash);
+
+      if (frame) {
+        const tint = (shot === 'enemy') ? [0.72, 0.55, 0.62] : null;
+        if (this.r.drawFrame) this.r.drawFrame(frame, who.pal, FULL_Y, tint, flash);
+        else this.plainFrame(ctx, frame, who.pal);
+      }
+
+      // 敌方倒下时向上淡出
+      if (phase.name === 'enemyDown') {
+        const k = Math.min(1, t / phase.dur);
+        ctx.fillStyle = 'rgba(0,0,0,' + (k * 0.85).toFixed(2) + ')';
+        ctx.fillRect(0, 8, 64, 56);
+      }
 
       // ---- 文字 ----
       const msg = {
         intro: this.enemyName(this.enemyChar) + '!',
-        attack: this.win ? 'GO!' : 'GO!',
-        down: 'KO!',
-        win: 'YOU WIN!',
-        counter: 'ENEMY!',
-        hurt: 'YOU LOSE',
+        myAttack: 'GO!',
+        enemyHurt: 'HIT!',
+        enemyDown: 'KO!',
+        myWin: 'YOU WIN!',
+        enemyAttack: 'ENEMY!',
+        myHurt: 'OUCH!',
         end: this.win ? 'WINNER!' : 'DEFEAT..'
       }[phase.name] || '';
-      this.text(ctx, msg, 57, '#fff');
+      this.r.textCentered(msg, 57, '#fff');
+    }
+
+    plainFrame(ctx, rows, pal) {
+      for (let y = 0; y < rows.length; y++) {
+        const row = rows[y];
+        for (let x = 0; x < row.length; x++) {
+          const idx = parseInt(row[x], 16);
+          if (!idx) continue;
+          const [r, g, b] = ((c) => [((c >> 11) & 31) * 255 / 31 | 0,
+                                      ((c >> 5) & 63) * 255 / 63 | 0,
+                                      (c & 31) * 255 / 31 | 0])(pal[idx]);
+          ctx.fillStyle = `rgb(${r},${g},${b})`;
+          ctx.fillRect(x, FULL_Y + y, 1, 1);
+        }
+      }
     }
 
     hpBar(ctx, x, y, w, pct, color) {

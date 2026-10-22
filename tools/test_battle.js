@@ -37,13 +37,15 @@ function run(name, opts) {
   if (B.active) throw new Error(name + ': 演出没有结束');
   console.log(`${name}: 阶段 ${[...seen].join(' -> ')}  时长 ${total}ms`);
 
-  // 均匀取 8 帧
+  // 每个镜头取一帧（回合制切镜，按阶段取样最能说明问题）
   B.start(opts, 0);
-  for (let i = 0; i < 8; i++) {
-    const t = Math.round((total - 1) * i / 7);
+  let acc = 0;
+  for (const p of B.phases) {
+    const mid = acc + p.dur * 0.5;
     fb.buf.fill(0);
-    B.draw(fb.ctx, t);
+    B.draw(fb.ctx, mid);
     shots.push(Array.from(fb.buf));
+    acc += p.dur;
   }
   return shots;
 }
