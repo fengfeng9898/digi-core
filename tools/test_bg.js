@@ -83,10 +83,12 @@ function full(nowSec, label) {
 }
 
 const scenes = [];
-scenes.push(full(T_DAY, '白天'));
+R.nowSource = () => T_DAY;
+scenes.push(full(T_DAY, '白天 12:00'));
 bg.advance(12);
 scenes.push(full(T_DAY, '白天（12 秒后）'));
-scenes.push(full(T_NIGHT, '黑夜'));
+R.nowSource = () => T_NIGHT;
+scenes.push(full(T_NIGHT, '黑夜 22:00'));
 bg.advance(12);
 scenes.push(full(T_NIGHT, '黑夜（12 秒后）'));
 

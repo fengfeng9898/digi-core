@@ -151,12 +151,14 @@
     // ---------- 整屏 ----------
     draw(pet, nowMs, nowSec) {
       const snap = pet.snapshot(nowSec);
+      // 背景与时钟都跟真实时间走（北京时间），不吃游戏内加速
+      const realSec = this.nowSource ? this.nowSource() : Date.now() / 1000;
 
       // 背景（白天/黑夜 + 飘动的云）；顶部 8px 保持黑色给状态栏
       this.ctx.fillStyle = '#000';
       this.ctx.fillRect(0, 0, 64, 8);
       if (this.bg) {
-        this.bg.draw(this.ctx, nowSec, this.sceneMode || 'auto');
+        this.bg.draw(this.ctx, realSec, this.sceneMode || 'auto');
       } else {
         this.ctx.fillRect(0, 8, 64, 56);
       }
@@ -203,13 +205,27 @@
       // 便便
       for (let i = 0; i < snap.poops && i < 3; i++) this.rect(56 + i * 3, 58, 2, 2, '#820000');
 
-      // 底部文字
+      // 底部：左边真实北京时间，右边阶段
+      this.text(this.clockStr(realSec), 1, 56, '#00e5ff');
+
       let msg;
-      if (snap.sleeping) msg = 'ZZZ...';
-      else if (!snap.alive) msg = 'R.I.P.';
-      else if (snap.stage === 0) msg = 'EGG ' + Math.ceil(snap.evolveIn / 3600) + 'H';
-      else msg = snap.stageEn;
-      this.textCentered(msg, 57, snap.alive ? '#ffffff' : '#7b7b7b');
+      if (snap.sleeping) msg = 'ZZZ';
+      else if (!snap.alive) msg = 'RIP';
+      else if (snap.stage === 0) msg = 'EGG';
+      else msg = this.shortStage(snap.stageEn);
+      const col = snap.alive ? '#ffffff' : '#7b7b7b';
+      this.text(msg, 63 - msg.length * 6 + 1, 56, col);
+    }
+
+    // 北京时间 HH:MM
+    clockStr(sec) {
+      const t = (((sec % 86400) + 86400 + 8 * 3600) % 86400);
+      const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60);
+      return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+    }
+
+    shortStage(name) {
+      return { ULTIMATE: 'ULT', PERFECT: 'PERF' }[name] || name;
     }
 
     spriteFrame(rows, pal, dim) {

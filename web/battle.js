@@ -101,7 +101,8 @@
       // ---- 背景 + 顶部黑条 ----
       ctx.fillStyle = '#000';
       ctx.fillRect(0, 0, 64, 8);
-      if (this.r && this.r.bg) this.r.bg.draw(ctx, nowSec || 0, this.r.sceneMode || 'auto');
+      const realSec = (this.r && this.r.nowSource) ? this.r.nowSource() : Date.now() / 1000;
+      if (this.r && this.r.bg) this.r.bg.draw(ctx, realSec, this.r.sceneMode || 'auto');
       else ctx.fillRect(0, 8, 64, 56);
 
       // ---- 血条 ----
@@ -164,7 +165,7 @@
         myHurt: 'OUCH!',
         end: this.revert ? 'REVERT..' : (this.win ? 'WINNER!' : 'DEFEAT..')
       }[phase.name] || '';
-      this.r.textCentered(msg, 57, '#fff');
+      this.r.textCentered(msg, 56, '#fff');
     }
 
     plainFrame(ctx, rows, pal) {
