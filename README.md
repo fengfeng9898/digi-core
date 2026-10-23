@@ -1,141 +1,291 @@
 # DIGI-CORE
 
-ESP32-DevKitC-32E + 独立 HUB75E 64×64 RGB 点阵屏，做成一台数码暴龙机风格的养成机。
-**无按键**：所有操作来自局域网网页；飞书通过本地桥接服务转发指令。
+**一台跑在 ESP32 上的数码暴龙风格养成机。64×64 全彩 LED 面板，无实体按键，全程用手机网页 / App 控制。**
+
+蛋 → 幼年期 → 成长期 → 成熟期 → 完全体 → 究极体，5 条进化线、27 只角色、真实北京时间昼夜背景、回合制战斗、6 张升级卡、A/B 双槽存档、网页 OTA 升级。
+
+![界面示意](docs/screen_mock.png)
 
 ---
 
-## 当前进度
+## 特性
 
-| 模块 | 状态 |
+| 模块 | 说明 |
 |---|---|
-| 工具链（PlatformIO + espressif32 6.8.1 + Arduino core 2.0.17） | ✅ 编译通过 |
-| HUB75 64×64 驱动封装（6bit 色深 / 双缓冲 / 15 MHz） | ✅ 已接入 |
-| 精灵管线（程序化生成 → 索引色 ASCII → 逐像素绘制） | ✅ 蛋/墓碑 + 究极体兜底 |
-| **角色动画**（待机/攻击/受伤/胜利，来自 GIF） | ✅ 滚球兽 81 帧、亚古兽 59 帧、暴龙兽 63 帧 |
-| 战斗演出（敌方登场/受击/倒下/反击） | ✅ 网页预览已实现，固件待移植 |
-| 白天/黑夜背景 + 飘云（仅云动） | ✅ 网页预览已实现，固件待移植 |
-| 随机退化（饥饿/重伤/生病） | ✅ 网页预览已实现，固件待移植 |
-| 战斗卡临时进化（战后回原阶段） | ✅ 网页预览已实现，固件待移植 |
-| 养成状态机（亚古兽系六级 + 死亡），**15~30 天真实周期**（NTP 计时，跨重启连续） | ✅ |
-| 随机事件系统（便便/野生遭遇/生病/捡东西/呼唤，20 分钟~3 小时一次） | ✅ |
-| 事件日志 + 网页事件流 + 时间快进调试接口 | ✅ |
-| 节奏验证脚本（pace_sim / sim_life，500 次模拟 100% 到达究极体） | ✅ |
-| NVS 存档（CRC 校验、30 秒心跳、动作即存） | ✅ |
-| 局域网网页控制台（状态 / 动作 / 卡片 / 亮度） | ✅ |
-| WiFi 配网（连不上自动回退热点） | ✅ |
-| 飞书桥接（长连接收指令 + 进化播报） | ✅ 代码完成，待填 app 凭证 |
-| 音效（蜂鸣器） | ⬜ 未接线，未实现 |
-| 战斗动画 / 回合制交互 | ⬜ 目前是即时结算 |
-| 外壳 / 锂电 | ⬜ |
+| 显示 | HUB75E 64×64 真彩，6bit 色深，112 Hz 刷新，15 FPS 渲染 |
+| 渲染 | 单缓冲 + 脏矩形 + HUD 值缓存，单帧绘制 **0.3–0.8 ms**（扫描周期 8.9 ms） |
+| 养成 | 6 阶段、5 条进化线、时间闸门 + 胜场门槛 |
+| 惩罚 | 饥饿掉血、心情衰减、便便、生病、**退化**（同线回退）、死亡 |
+| 战斗 | 回合制，命中率 = `P*100/(P+E)`，24 HP 交换制，前冲突进 + 受击抖动 + 打击特效 |
+| 卡片 | 勇气 / 战斗 / 力量 / 守护 / 回复 / 复活 共 6 张 |
+| 场景 | 按真实北京时间切换昼夜，云朵横向飘动，左下角时钟 |
+| 控制 | 局域网网页 + Android App（含屏幕预览），无任何按键 |
+| 存档 | A/B 双槽 + CRC，掉电最多丢最后一次存档 |
+| 升级 | HTTP OTA（`/api/ota`），WiFi 直接刷机，不用插线 |
 
 ---
 
-## 硬件接线
+## 硬件
 
-| 面板 | GPIO | | 面板 | GPIO |
-|---|---|---|---|---|
-| R1 | 25 | | A | 23 |
-| G1 | 26 | | B | 19 |
-| B1 | 27 | | C | 5 |
-| R2 | 14 | | D | 17 |
-| G2 | 13 | | E | **16** |
-| B2 | 4 | | LAT | 21 |
-| CLK | 18 | | OE | 22 |
+| 项 | 型号 |
+|---|---|
+| 主控 | ESP32-DevKitC-32E（ESP32-WROOM-32E，4 MB Flash，无 PSRAM） |
+| 面板 | HUB75E 64×64 P3，1/32 扫描（**必须有 E 线**） |
+| 转接 | 自制 ESP32 → HUB75 转接板 |
+| 供电 | 5 V（面板单独供电，共地） |
 
-- `E` 脚必须接，否则 64×64 只有一半画面。
-- 面板 5 V 单独供电（≥4 A），与 ESP32 共地；面板电源端并 1000 µF。
-- 强烈建议加 74HCT245 做 3.3 V→5 V 电平转换。
-- 目前**不需要接任何按键**；板载 `BOOT` 键保留为「长按 3 秒清空 WiFi 配置」的恢复手段。
+> 无 PSRAM 是硬性要求：HUB75 DMA 缓冲必须位于内部 SRAM，PSRAM 不可用。
+
+### 接线（当前固件实际使用）
+
+采用 `ESP32-HUB75-MatrixPanel-DMA` 的默认引脚，仅覆盖 E 与时钟相位：
+
+| 信号 | GPIO | 信号 | GPIO |
+|---|---|---|---|
+| R1 | 25 | R2 | 14 |
+| G1 | 26 | G2 | 12 |
+| B1 | 27 | B2 | 13 |
+| A | 23 | LAT | 4 |
+| B | 19 | OE | 15 |
+| C | 5 | CLK | 16 |
+| D | 17 | **E** | **18** |
+
+- `cfg.gpio.e = 18`
+- `cfg.clkphase = false`
+- `cfg.latch_blanking = 1`（必须 ≥1，0 会让库内部下溢）
+- `cfg.double_buff = false`（双缓冲翻页会忙等 EOF 并重连 DMA，反而闪烁）
+
+> `src/config.h` 里还有一组 `PIN_*` 宏，是早期接线记录，**固件并不使用**，接线请以本表为准。
 
 ---
 
-## 先看效果：网页预览（不用板子）
+## 快速开始
 
-双击 `web/preview.html`，点按钮操作、拖速度看动画与进化。
-3600× 下约 6 分钟走完 15~30 天，带自动照料。详见 [web/README.md](web/README.md)。
-
-## 编译 / 烧录
-
-```powershell
-cd C:\Users\Administrator\deepseekwork\esp32-digimon
-python -m platformio run                 # 编译
-python -m platformio run -t upload       # 烧录（USB 连板子）
-python -m platformio device monitor      # 串口日志 115200
-```
-
-串口应能看到：
+### 环境
 
 ```
-=== DIGI-CORE 0.1.0 ===
-[panel] 64x64 chain=1 depth=6 refresh=... freeheap=...
-[save] new  stage=EGG species=EGG age=0s
-[net] mode=AP ip=192.168.4.1
+PlatformIO 6.x
+platform  = espressif32@6.8.1
+framework = arduino (ESP32 core 2.0.17)
+board     = esp32dev
 ```
 
-`refresh` 应 ≥ 120 Hz。若 `begin() FAILED` 或画面错位，先查供电与 E 脚。
+依赖库在 `platformio.ini` 中自动拉取：
 
----
+- `adafruit/Adafruit GFX Library`
+- `ESP32-HUB75-MatrixPanel-DMA` 3.0.5
 
-## 首次使用
+### 编译与烧录
 
-1. 上电后若没配过网，屏幕显示 `192.168.4` / `.1`，设备开热点 `DIGI-CORE-XXXX`，密码 `digipet1`。
-2. 手机连该热点 → 打开 `http://192.168.4.1` → 填家里 2.4 GHz WiFi 名称和密码 → 保存。
-3. 设备重启后屏幕显示局域网 IP，之后手机/电脑连同一 WiFi 打开该 IP 即可控制。
-4. 也可以试 `http://digicore.local`（mDNS，部分安卓不支持）。
-
-网页能力：喂食 / 清洁 / 训练 / 战斗 / 睡觉 / 唤醒 / 7 种升级卡 / 亮度调节 / 实时状态。
-
-> 换路由器或忘记密码：长按板载 BOOT 键 3 秒，设备清空 WiFi 配置并回到配网模式。
-
----
-
-## 飞书接入
-
-```powershell
-pip install lark-oapi requests
-cd bridge
-copy config.example.json config.json   # 填 app_id / app_secret / device 地址
-python feishu_bridge.py
+```bash
+pio run                                   # 编译
+pio run -t upload --upload-port COM3      # 烧录（换成你的串口）
+pio device monitor -b 115200              # 看日志
 ```
 
-飞书开放平台侧需要：
-1. 创建「企业自建应用」，开启**机器人**能力；
-2. 事件订阅选**长连接**方式，订阅 `im.message.receive_v1`；
-3. 权限：`im:message`、`im:message:send_as_bot`；
-4. 发布版本，把机器人拉进群。
+正常启动日志：
 
-机器人指令：`喂食` `清洁` `训练` `战斗` `睡觉` `唤醒` `状态` `进化` `卡片 勇气`（力量/守护/回复/复活）。
+```
+=== DIGI-CORE 1.0.2 ===
+[panel] 64x64 depth=6 refresh=112Hz freeheap=243840
+[save] load A n=80/80 ok=1 seq=71 | B n=80 ok=1 seq=70
+[net] mode=LAN ip=192.168.0.53
+[boot] done freeheap=185404
+```
+
+### 配网
+
+默认 SSID / 密码在 `src/config.h`：
+
+```c
+#define WIFI_STA_SSID_DEFAULT "你的WiFi"
+#define WIFI_STA_PASS_DEFAULT "密码"
+```
+
+连不上会自建热点 `DIGI-CORE-XXXX`（密码 `digipet1`），手机连上后打开 `192.168.4.1` 配网。
+
+开机横幅会显示当前 IP。
 
 ---
 
-## 已知限制 / 待办
+## 手机控制
 
-1. **WiFi 与点阵共存的干扰**：库文档明确警告高频 DMA 可能影响 Wi-Fi。实测若网页卡顿或画面闪，把 `PANEL_I2S` 降到 10–15 MHz 或色深降到 5bit。
-2. 战斗目前是「立即结算 + 屏幕提示」，没有逐回合画面。
-3. 音效未实现（`PIN_BUZZER` 已预留 GPIO2）。
-4. 精灵是程序化生成的占位美术，替换时只需覆盖 `src/assets/sprites.h`（保持同样的 ASCII 索引格式）。
-5. 网页是同步 WebServer，单用户操作没问题，多人同时访问会排队。
+### 网页
+
+手机浏览器直接打开 `http://<设备IP>/`，包含：
+
+- 状态（阶段 / 体力 / 心情 / 饥饿 / 年龄 / 时钟）
+- 操作：喂食 · 清洁 · 训练 · 战斗 · 安抚 · 睡觉 · 唤醒 · 进化检查
+- 卡片：6 张升级卡
+- **选择进化线**：5 条线 + 随机（孵化时生效）
+- **重置游戏**
+- 调试：+6 小时 / +1 天 / +3 天 快进
+
+每个操作在面板上都有 0.7 秒对应小动画（爱心 / 泡泡 / 火花 / Zzz）。
+
+### Android App
+
+`docs/DigiCore.apk`（约 108 KB，无第三方依赖，WebView 外壳），填入设备 IP 即可。额外包含 **64×64 屏幕预览**，不用一直盯着面板。
+
+App 源码在 `app/index.html`，用 `tools/build_apk.ps1` 打包（aapt2 + d8 + apksigner，不需要 Gradle）。
 
 ---
 
-## 目录
+## OTA 升级
+
+双 OTA 分区（`partitions_ota.csv`，各 1.875 MB），通过 WiFi 刷写：
+
+```bash
+pio run                                   # 先编译
+curl "http://<设备IP>/api/ota/arm?k=1234"  # 授权 60 秒
+curl -F "firmware=@.pio/build/esp32dev/firmware.bin" http://<设备IP>/api/ota
+```
+
+也可以在 App / 网页的「固件更新（OTA）」里选文件上传。
+
+> 口令在 `src/config.h` 的 `OTA_KEY`。因为开了 CORS，**仅限可信局域网使用**。
+
+---
+
+## 玩法
+
+### 五条进化线
+
+| 线 | 进化链（括号内为进化所需胜场） |
+|---|---|
+| 亚古兽 | 滚球兽 → 亚古兽(5) → 暴龙兽(10) → 机械暴龙兽(20) → 战斗暴龙兽 |
+| V 仔兽 | 芝比兽 → V仔兽(5) → XV兽(10) → 机甲龙兽(20) → 帝皇龙甲兽 |
+| 大耳兽 | 软糖兽 → 大耳兽(5) → 加尔哥兽(10) → 拉比兽(20) → 撒多格杜兽 |
+| 巴达兽 | 巴达兽(5) → 天使兽(10) → 神圣天使兽(20) → 炽天使兽 |
+| 迪路兽 | 迪路兽(5) → 尼菲迪兽(10) → 人面战鹰兽(20) → 圣龙兽 |
+
+孵化时随机选线，也可以在网页里指定。
+
+### 进化与退化
+
+```
+进化条件 = 时间到（本阶段时长）  或  胜场达标
+究极体额外需要：勇气卡
+退化     = 随机回退到同一条线内更低的阶段，胜场清零，攻防 ×0.7
+```
+
+各阶段时长（随机区间）：蛋 12–24 h，幼年期 2–4 天，成长期 3–6 天，成熟期 3.5–7 天，完全体 6–12 天，**到究极体约 15–30 天**。
+
+### 战斗
+
+```
+P = atk*2 + def                                   我方力量
+E = P + (遭遇战 ? 16 : 0) + rand(-14 .. 15)       敌方力量
+命中率 = P*100 / (P+E)                            敌方 = 100 - 命中率
+伤害   = 3 .. 7（心情 ≥80 时 +1）
+HP     = 24，最多 40 次交换，打满按剩余血量判定
+战后宠物 HP 损失 = (24 - 剩余) * 45 / 24
+```
+
+演出顺序：敌方登场 → `GO!` → 突进攻击 → `HIT!`（白核 + 十字环 + 火花 + 抖动）→ 结果。敌人都不是角色线成员（恶魔兽 / 艾特兽 / 吸血鬼兽，BOSS 为堕天地狱兽与小丑王）。
+
+---
+
+## 素材管线
+
+仓库里的精灵数据是由原始素材**转换生成**的，脚本都在 `tools/`：
+
+```bash
+# 1. 获取素材（第三方仓库，需自行 clone）
+git clone https://github.com/kongtaehun/digimon-assets-VB.git ../vb-assets
+
+# 2. 生成固件用的精灵头 + 网页用的数据
+python tools/import_vb.py \
+  --src ../vb-assets/assets/data \
+  --ids koro,agu,grey,metalgrey_va,wargrey,chibi,v,xv,paildra,imperialdra_f,pata,ange,holyange,seraphi,gummy,terrier,galgo,rapid,saintgalgo,tail_c,neferti,silphy,holydra,devi,ete,vamde,belphe_r,bota
+
+# 3. 重新生成角色枚举与动画表
+python tools/gen_char_enum.py
+```
+
+其它工具：
+
+| 脚本 | 作用 |
+|---|---|
+| `tools/import_backgrounds.py` | 生成昼夜背景 `bg_data.h` |
+| `tools/make_joker.py` | 原创 BOSS「小丑王」动画 + `joker_data.h` |
+| `tools/make_app_icon.py` | APK 图标 |
+| `tools/build_apk.ps1` | 打包 APK |
+| `tools/serial_log.py` | 串口抓日志 |
+
+精灵格式：16 色索引，每像素 1 个十六进制字符，`0` 表示透明，`64×48` 画布，ASCII 行数组。
+
+---
+
+## 目录结构
 
 ```
 src/
-  main.cpp            启动 / 主循环
-  config.h            引脚、屏幕、玩法参数
-  panel.h             面板全局对象
-  assets/sprites.h    生成的精灵数据
-  gfx/sprite.*        索引色精灵绘制
-  game/pet.*          养成状态机 / 进化 / 战斗 / 卡片
-  game/save.*         NVS 存档 + WiFi 配置
-  ui/ui.*             64×64 界面渲染
-  net/net.*           WiFi + HTTP API
-  net/webui.h         内嵌网页
-tools/
-  gen_sprites.py      精灵生成器
-  preview.py          终端预览精灵
-bridge/
-  feishu_bridge.py    飞书 ↔ 设备桥接
+├── main.cpp              主循环、面板初始化、15fps 渲染闸门
+├── config.h              WiFi / 面板参数 / OTA 口令
+├── panel.h, panel_rot.h  面板实例 + 90° 旋转坐标映射
+├── game/                 宠物状态机、结算、进化、战斗结算、存档
+├── gfx/                  精灵绘制、动画播放、角色枚举
+├── ui/                   主界面、战斗演出、屏幕绘制与脏矩形
+├── net/                  HTTP 服务、API、内置网页
+└── assets/               生成的角色/背景数据
+app/index.html            手机控制页（APK 内嵌）
+web/                      浏览器预览（走 JS 复刻同一套逻辑）
+tools/                    素材导入、APK 打包、串口工具
+docs/                     APK、示意图
+partitions_ota.csv        双 OTA 分区表
 ```
+
+---
+
+## HTTP API
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/` | 控制页面 |
+| GET | `/api/state` | 完整状态 JSON |
+| GET | `/api/act?c=feed\|clean\|train\|battle\|pet\|sleep\|wake\|evolve` | 执行操作 |
+| GET | `/api/card?id=courage\|battle\|power\|guard\|heal\|revive` | 用卡 |
+| GET | `/api/bright?v=10..180` | 调亮度 |
+| GET | `/api/rot?d=cw\|ccw` | 屏幕旋转方向 |
+| GET | `/api/line?n=0..4\|255` | 选进化线（255=随机） |
+| GET | `/api/warp?h=N` | **调试**：快进 N 小时 |
+| GET | `/api/reset?k=1234` | **调试**：重置成新蛋（保留选线） |
+| GET | `/api/ota/arm?k=1234` | OTA 授权 60 秒 |
+| POST | `/api/ota` | 上传 firmware.bin |
+| POST | `/api/wifi` | 保存 WiFi |
+
+---
+
+## 架构要点
+
+- **单缓冲 + 脏矩形**：库的 `flipDMABuffer()` 会忙等 EOF 并重连 DMA，双缓冲在 15 FPS 下反而闪；改为单缓冲后靠像素差量更新，单帧 0.3–0.8 ms。
+- **相邻帧不做像素差分**：面板一旦被 HUD / 战斗 / 特效覆写，差分会漏画并留下残影，因此除「完全同一帧」外一律整块擦除重画。
+- **渲染器切换强制重绘**：主界面 / 战斗 / 进化特效三套渲染器切换时清屏，避免战斗横幅、血条残留。
+- **旋转**：该库的 `setRotation()` 未实现，改为 `RotPanel` 子类重写 `drawPixel` 等做坐标映射。
+- **角色表驱动**：物种表 `SpeciesRow{stage,line,next,wins,ch,name}` 支持多进化线，退化限定在同线内。
+
+---
+
+## 已知限制 / Roadmap
+
+- 巴达兽线与迪路兽线**没有幼年期**（源头素材缺 Tokomon / Plotmon），直接从成长期起步
+- Flash 占用 ~79%（1.56 MB / 1.875 MB），继续加角色需要改 4bpp 打包
+- D-3 的 **Mash 连点战斗** 与 **步数地图推进** 尚未实现
+- 音效未接（面板无喇叭，可在 App 端补）
+
+---
+
+## 致谢
+
+- [ESP32-HUB75-MatrixPanel-DMA](https://github.com/mrcodetastic/ESP32-HUB75-MatrixPanel-DMA) —— 面板驱动
+- [kongtaehun/digimon-assets-VB](https://github.com/kongtaehun/digimon-assets-VB) —— 精灵素材来源
+- [itsTylerIRL/Digiflip](https://github.com/itsTylerIRL/Digiflip) —— 战斗交换制与双槽存档的机制参考（未使用其代码/素材）
+
+---
+
+## 许可
+
+代码采用 **MIT**（见 `LICENSE`）。
+
+角色美术数据的权利归属与使用限制见 **`NOTICE.md`**：这些数据版权属于 Bandai / 本乡昭由 / 东映动画，本项目为非商业的个人项目。

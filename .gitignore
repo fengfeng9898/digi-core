@@ -1,6 +1,27 @@
 .pio/
 build.log
 build-smoke.log
+upload.log
+*.log
 __pycache__/
 *.pyc
 bridge/config.json
+
+# 本地构建产物
+*.elf
+*.map
+
+# Android 构建中间产物（源码与资源保留)
+android/build/
+
+# 素材源目录（体积大，需自行获取）
+vb-assets/
+d3data/
+d3-art/
+clucas/
+*.zip
+
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
